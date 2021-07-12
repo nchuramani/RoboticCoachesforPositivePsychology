@@ -11,7 +11,7 @@ import rospy
 from dialogue_manager.srv import *
 
 rospy.init_node('state_manager', anonymous=True)
-# arguments for the knowledge base
+
 rospy.wait_for_service('speech_recognizer_srv')
 rospy.wait_for_service('text_to_speech_srv')
 
