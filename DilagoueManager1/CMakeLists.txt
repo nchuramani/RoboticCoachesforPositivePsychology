@@ -48,14 +48,14 @@ find_package(Boost REQUIRED COMPONENTS system)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-#add_message_files(
-#  FILES
-#)
+add_message_files(
+  FILES
+  Emotion.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  speech_srv.srv
   tts_srv.srv
 )
 
