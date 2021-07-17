@@ -12,6 +12,7 @@ import smach_ros
 
 import rospy
 from dialogue_manager.srv import *
+from dialogue_manager.msg import Emotion
 
 rospy.init_node('state_manager', anonymous=True)
 # arguments for the knowledge base
@@ -28,7 +29,7 @@ except rospy.ServiceException as e:
 class PredProcess(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                        outcomes=['hello', 'day', 'goodbye'],
+                        outcomes=['hello', 'day', 'e_detect', 'goodbye'],
                         input_keys=['kb_args', 'db_con', 'db_cursor'],
                         output_keys=['kb_args', 'status'])
 
@@ -68,6 +69,9 @@ class PredProcess(smach.State):
 
                 elif 'goodbye' in speech_text.outp.lower():
                     return 'goodbye'
+
+                elif 'emotion' in speech_text.outp.lower():
+                    return 'e_detect'
 
                 else:
                     sentence = random.choice(nlg.dialogue['not_understood']).format(userdata.kb_args['name'])
@@ -201,6 +205,138 @@ class Goodbye(smach.State):
 
         return 'terminate'
 
+class EmotionDetection(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['happy', 'sad', 'surprise', 'anger', 'disgust', 'fear', 'neutral','predprocess'],
+                             input_keys=['kb_args'])
+
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_DETECTION')
+
+        sentence = random.choice(nlg.dialogue['emotion_detection']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        try:
+            categories = rospy.wait_for_message('/emotion_channel', Emotion)
+            categories = categories.categories
+            
+            return ['happy', 'sad', 'surprise', 'anger', 'disgust', 'fear', 'neutral'][categories.index(max(categories))]
+
+        except:
+            sentence = random.choice(nlg.dialogue['emotion_not_detected']).format(userdata.kb_args['name'])
+            tts_proxy(sentence)
+            print 'Pepper:', sentence
+
+            return 'predprocess'
+
+class EmotionHappy(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['predprocess'],
+                             input_keys=['kb_args'])
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_HAPPY')
+
+        sentence = random.choice(nlg.dialogue['emotion_happy']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        return 'predprocess'
+
+class EmotionSad(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['predprocess'],
+                             input_keys=['kb_args'])
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_SAD')
+
+        sentence = random.choice(nlg.dialogue['emotion_sad']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        return 'predprocess'
+
+class EmotionSurprise(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['predprocess'],
+                             input_keys=['kb_args'])
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_SURPRISE')
+
+        sentence = random.choice(nlg.dialogue['emotion_surprise']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        return 'predprocess'
+
+class EmotionAnger(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['predprocess'],
+                             input_keys=['kb_args'])
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_ANGER')
+
+        sentence = random.choice(nlg.dialogue['emotion_anger']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        return 'predprocess'
+
+class EmotionDisgust(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['predprocess'],
+                             input_keys=['kb_args'])
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_DISGUST')
+
+        sentence = random.choice(nlg.dialogue['emotion_disgust']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        return 'predprocess'
+
+class EmotionFear(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['predprocess'],
+                             input_keys=['kb_args'])
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_FEAR')
+
+        sentence = random.choice(nlg.dialogue['emotion_fear']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        return 'predprocess'
+
+class EmotionNeutral(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                             outcomes=['predprocess'],
+                             input_keys=['kb_args'])
+
+    def execute(self, userdata):
+        rospy.loginfo('Executing state E_NEUTRAL')
+
+        sentence = random.choice(nlg.dialogue['emotion_neutral']).format(userdata.kb_args['name'])
+        tts_proxy(sentence)
+        print 'Pepper:', sentence
+
+        return 'predprocess'
+
 def main():
 
     try:
@@ -229,6 +365,7 @@ def main():
             smach.StateMachine.add('PREDPROCESS', PredProcess(),
                                    transitions={'hello':'HELLO',
                                                 'day':'DAY',
+                                                'e_detect':'E_DETECT',
                                                 'goodbye':'GOODBYE'},
                                    remapping={'status':'sm_status',
                                               'kb_args':'sm_kb_args',
@@ -255,6 +392,45 @@ def main():
                                    transitions={'terminate':'outcome_termination'},
                                    remapping={'kb_args':'sm_kb_args',
                                               'status':'sm_status'})
+
+            smach.StateMachine.add('E_DETECT', EmotionDetection(),
+                                   transitions={'happy':'E_HAPPY',
+                                                 'sad':'E_SAD',
+                                                 'surprise':'E_SURPRISE',
+                                                 'anger':'E_ANGER',
+                                                 'disgust':'E_DISGUST',
+                                                 'fear':'E_FEAR',
+                                                 'neutral':'E_NEUTRAL',
+                                                 'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
+
+            smach.StateMachine.add('E_HAPPY', EmotionHappy(),
+                                   transitions={'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
+
+            smach.StateMachine.add('E_SAD', EmotionSad(),
+                                   transitions={'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
+
+            smach.StateMachine.add('E_SURPRISE', EmotionSurprise(),
+                                   transitions={'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
+
+            smach.StateMachine.add('E_ANGER', EmotionAnger(),
+                                   transitions={'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
+
+            smach.StateMachine.add('E_DISGUST', EmotionDisgust(),
+                                   transitions={'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
+
+            smach.StateMachine.add('E_FEAR', EmotionFear(),
+                                   transitions={'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
+
+            smach.StateMachine.add('E_NEUTRAL', EmotionNeutral(),
+                                   transitions={'predprocess':'PREDPROCESS'},
+                                   remapping={'kb_args':'sm_kb_args'})
 
         outcome = sm.execute()
         rospy.spin()
