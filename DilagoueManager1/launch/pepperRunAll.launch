@@ -1,0 +1,7 @@
+<launch>
+	<node name="pepper_tts_service" pkg="dialogue_manager" type="pepper_tts_service.py" output="log"/>
+	<node name="speech_recognizer_service" pkg="dialogue_manager" type="speech_recognizer_service.py" output="screen"/>
+	<node name="camera_publisher" pkg="dialogue_manager" type="camera_publisher.py" output="screen"/>
+	<node name="face_channel" pkg="dialogue_manager" type="face_channel.py" output="screen"/>
+	<node name="state_manager" pkg="dialogue_manager" type="state_manager.py" output="screen"/>
+</launch>
