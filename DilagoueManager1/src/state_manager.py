@@ -40,7 +40,7 @@ class PredProcess(smach.State):
 
         if self.first_time:
             sentence = random.choice(nlg.dialogue['learn_name'][:3])
-            tts_proxy(sentence)
+            tts_proxy(sentence, 'hi')
             print 'Pepper:', sentence
 
             name = raw_input('Enter your first name: ')
@@ -55,13 +55,13 @@ class PredProcess(smach.State):
 
         else:
             sentence = random.choice(nlg.dialogue['get_command']).format(userdata.kb_args['name'])
-            tts_proxy(sentence)
+            tts_proxy(sentence, '')
             print 'Pepper:', sentence
 
             counter = 0
 
             while counter < 3:
-                speech_text = speech_proxy('')
+                speech_text = speech_proxy('', '')
                 print userdata.kb_args['name'] + ":", speech_text.outp
 
                 if 'day' in speech_text.outp.lower():
@@ -75,7 +75,7 @@ class PredProcess(smach.State):
 
                 else:
                     sentence = random.choice(nlg.dialogue['not_understood']).format(userdata.kb_args['name'])
-                    tts_proxy(sentence)
+                    tts_proxy(sentence, '')
                     print 'Pepper:', sentence
                     counter += 1
 
@@ -93,24 +93,24 @@ class Hello(smach.State):
         rospy.loginfo('Executing state HELLO')
 
         sentence = random.choice(nlg.dialogue['after_meeting']).format(userdata.kb_args['name']) + ' ' + random.choice(nlg.dialogue['ask_id']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         counter = 0
 
         while counter < 3:
-            speech_text = speech_proxy('')
+            speech_text = speech_proxy('', '')
             print userdata.kb_args['name'] + ":", speech_text.outp
 
             if speech_text.outp == 'Couldn\'t understand':
                 sentence = random.choice(nlg.dialogue['not_understood']).format(userdata.kb_args['name'])
-                tts_proxy(sentence)
+                tts_proxy(sentence, '')
                 print 'Pepper:', sentence
                 counter += 1
 
             else:
                 sentence = nlg.dialogue['info_saved'][0].format(userdata.kb_args['name'])
-                tts_proxy(sentence)
+                tts_proxy(sentence, '')
                 print 'Pepper:', sentence
 
                 userdata.kb_args['ID'] = speech_text.outp
@@ -133,18 +133,18 @@ class Day(smach.State):
         rospy.loginfo('Executing state DAY')
 
         sentence = nlg.dialogue['question'][0].format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         counter = 0
 
         while counter < 3:
-            speech_text = speech_proxy('')
+            speech_text = speech_proxy('', '')
             print userdata.kb_args['name'] + ":", speech_text.outp
 
             if ('1' in speech_text.outp) or ('one' in speech_text.outp.lower()):
                 sentence = nlg.dialogue['day_rates'][0].format(userdata.kb_args['name'])
-                tts_proxy(sentence)
+                tts_proxy(sentence, '')
                 print 'Pepper:', sentence
 
                 userdata.kb_args['day_rate'] = '1'
@@ -155,7 +155,7 @@ class Day(smach.State):
 
             elif ('2' in speech_text.outp) or ('two' in speech_text.outp.lower()):
                 sentence = nlg.dialogue['day_rates'][1].format(userdata.kb_args['name'])
-                tts_proxy(sentence)
+                tts_proxy(sentence, '')
                 print 'Pepper:', sentence
 
                 userdata.kb_args['day_rate'] = '2'
@@ -166,7 +166,7 @@ class Day(smach.State):
 
             if ('3' in speech_text.outp) or ('three' in speech_text.outp.lower()):
                 sentence = nlg.dialogue['day_rates'][2].format(userdata.kb_args['name'])
-                tts_proxy(sentence)
+                tts_proxy(sentence, '')
                 print 'Pepper:', sentence
 
                 userdata.kb_args['day_rate'] = '3'
@@ -177,7 +177,7 @@ class Day(smach.State):
 
             else:
                 sentence = random.choice(nlg.dialogue['not_understood']).format(userdata.kb_args['name'])
-                tts_proxy(sentence)
+                tts_proxy(sentence, '')
                 print 'Pepper:', sentence
                 counter += 1
 
@@ -195,12 +195,12 @@ class Goodbye(smach.State):
 
         if userdata.status == 'not_understood':
             sentence = nlg.dialogue['goodbye'][-1].format(userdata.kb_args['name'])
-            tts_proxy(sentence)
+            tts_proxy(sentence, 'goodbye')
             print 'Pepper:', sentence
 
         else:
             sentence = random.choice(nlg.dialogue['goodbye'][:-1]).format(userdata.kb_args['name'])
-            tts_proxy(sentence)
+            tts_proxy(sentence, 'goodbye')
             print 'Pepper:', sentence
 
         return 'terminate'
@@ -216,7 +216,7 @@ class EmotionDetection(smach.State):
         rospy.loginfo('Executing state E_DETECTION')
 
         sentence = random.choice(nlg.dialogue['emotion_detection']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         try:
@@ -227,7 +227,7 @@ class EmotionDetection(smach.State):
 
         except:
             sentence = random.choice(nlg.dialogue['emotion_not_detected']).format(userdata.kb_args['name'])
-            tts_proxy(sentence)
+            tts_proxy(sentence, '')
             print 'Pepper:', sentence
 
             return 'predprocess'
@@ -242,7 +242,7 @@ class EmotionHappy(smach.State):
         rospy.loginfo('Executing state E_HAPPY')
 
         sentence = random.choice(nlg.dialogue['emotion_happy']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         return 'predprocess'
@@ -257,7 +257,7 @@ class EmotionSad(smach.State):
         rospy.loginfo('Executing state E_SAD')
 
         sentence = random.choice(nlg.dialogue['emotion_sad']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         return 'predprocess'
@@ -272,7 +272,7 @@ class EmotionSurprise(smach.State):
         rospy.loginfo('Executing state E_SURPRISE')
 
         sentence = random.choice(nlg.dialogue['emotion_surprise']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         return 'predprocess'
@@ -287,7 +287,7 @@ class EmotionAnger(smach.State):
         rospy.loginfo('Executing state E_ANGER')
 
         sentence = random.choice(nlg.dialogue['emotion_anger']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         return 'predprocess'
@@ -302,7 +302,7 @@ class EmotionDisgust(smach.State):
         rospy.loginfo('Executing state E_DISGUST')
 
         sentence = random.choice(nlg.dialogue['emotion_disgust']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         return 'predprocess'
@@ -317,7 +317,7 @@ class EmotionFear(smach.State):
         rospy.loginfo('Executing state E_FEAR')
 
         sentence = random.choice(nlg.dialogue['emotion_fear']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         return 'predprocess'
@@ -332,7 +332,7 @@ class EmotionNeutral(smach.State):
         rospy.loginfo('Executing state E_NEUTRAL')
 
         sentence = random.choice(nlg.dialogue['emotion_neutral']).format(userdata.kb_args['name'])
-        tts_proxy(sentence)
+        tts_proxy(sentence, '')
         print 'Pepper:', sentence
 
         return 'predprocess'
