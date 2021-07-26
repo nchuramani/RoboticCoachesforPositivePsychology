@@ -14,6 +14,7 @@ from cv_bridge import CvBridge, CvBridgeError
 import keras.backend.tensorflow_backend as tb
 
 import os
+#import cv2
 
 os.chdir(os.path.dirname(__file__))
 
@@ -50,7 +51,16 @@ def callback(data):
         image = numpy.zeros((finalImageSize[1], finalImageSize[0], 3), numpy.uint8)
         image[0:480, 0:640] = frame
         frame = image
-        
+
+        '''
+
+        cv2.imshow('pepper', frame)
+
+        if cv2.waitKey(33) == 27:
+            return
+
+        '''
+
          # If a face is detected
         if not len(face) == 0:
             # pre-process the face
