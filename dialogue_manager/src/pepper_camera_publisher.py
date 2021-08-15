@@ -109,8 +109,8 @@ def main():
                 # publishes image data
                 img_pub.publish(img_msg)
 
-            except CvBridgeError as err:
-                rospy.loginfo(err)
+            except CvBridgeError as e:
+                lm.write(e.message)
 
             frame_id += 1
 
