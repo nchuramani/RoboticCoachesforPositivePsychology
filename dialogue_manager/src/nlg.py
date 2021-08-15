@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# a dictionary that keeps and the whole script under categories
+# a dictionary that keeps the whole script under categories
 dialogue = {"general":  ["I couldn't understand what you said. Can you please repeat it?"],
 
             "emotion": [["That sounds like a tough experience. I'm sorry. I hope you feel better about it now.",
