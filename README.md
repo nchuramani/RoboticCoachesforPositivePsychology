@@ -6,7 +6,7 @@ This repository holds the code for the Mental Well-being Robot Coach project tha
 <br />
 <p align="center">
   <a href="https://www.cl.cam.ac.uk/~hg410/people.html">
-    <img src="img/Cambridge.png" alt="Logo" width="300" height="100">
+    <img src="dialogue_manager/img/Cambridge.png" alt="Logo" width="300" height="100">
   </a>
 </p>
 
@@ -14,7 +14,7 @@ This repository holds the code for the Mental Well-being Robot Coach project tha
 
 ## Pepper Robot
 
-<img src="img/PepperRobot.png" align="right" width="250px" />
+<img src="dialogue_manager/img/PepperRobot.png" align="right" width="250px" />
 
 SoftBank's *Pepper Robot* is used for testing and experiments.
 
@@ -32,7 +32,7 @@ Robot can be used either with the official simulation software of the SoftBank,
 Project uses the **FaceChannel** neural network that is a light-weight neural network to recognize emotion from facial expressions with much fewer parameters than common neural networks.
 
 
-![FaceChannel](img/FaceChannel.png)
+![FaceChannel](dialogue_manager/img/FaceChannel.png)
 
 <br>
 
