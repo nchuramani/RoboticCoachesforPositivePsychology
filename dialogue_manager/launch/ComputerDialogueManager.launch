@@ -1,0 +1,13 @@
+<launch>
+	<arg name="logger" default="Experiment"/>
+	<arg name="name" default="User"/>
+
+	<param name="logger" value="$(arg logger)"/>
+	<param name="name" value="$(arg name)"/>
+
+	<node name="text_to_speech_service" pkg="dialogue_manager" type="text_to_speech_service.py" output="screen"/>
+	<node name="speech_recognizer_service" pkg="dialogue_manager" type="speech_recognizer_service.py" output="screen"/>
+	<node name="camera_publisher" pkg="dialogue_manager" type="camera_publisher.py" output="screen"/>
+	<node name="face_channel" pkg="dialogue_manager" type="face_channel.py" output="screen"/>
+	<node name="state_manager" pkg="dialogue_manager" type="state_manager.py" output="screen"/>
+</launch>
