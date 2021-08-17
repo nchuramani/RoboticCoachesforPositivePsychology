@@ -1,0 +1,20 @@
+gTTS==2.2.3
+playsound==1.2.2
+PyAudio==0.2.11
+numpy==1.16.6
+tensorboard==2.0.2
+tensorflow==2.0.0
+tensorflow-estimator==2.0.1
+tensorflow-gpu==2.0.0
+Keras==2.3.1
+Keras-Applications==1.0.8
+Keras-Preprocessing==1.1.2
+opencv-python==4.1.2.30
+cv-bridge==1.13.0
+smach==2.0.1 (smach might be coming default with ROS)
+smach-ros==2.0.1
+smach-viewer==3.0.0
+SpeechRecognition==3.8.1
+naoqi==2.5.7 (you need to download this from the SoftBank's website.)
+prettytable==1.0.1
+textwrap (any version)
