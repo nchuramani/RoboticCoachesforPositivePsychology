@@ -10,8 +10,13 @@ from sensor_msgs.msg import Image
 
 from cv_bridge import CvBridge, CvBridgeError
 
+import os
+
+# changing directory to the file's directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 # creating/connecting the main log file
-lm = LogManager(rospy.get_param('logger'))
+lm = LogManager(str(rospy.get_param('logger')))
 
 # getting the values from the config file. they can be modified.
 with open('./config.txt', 'r') as f:
