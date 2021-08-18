@@ -7,17 +7,31 @@ from log_manager import LogManager
 import rospy
 from dialogue_manager.srv import tts_srv, tts_srvResponse
 
+import os
+
+# changing directory to the file's directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# getting the values from the config file. they can be modified.
+with open('./config.txt', 'r') as f:
+    fLines = f.readlines()
+
+    MICROPHONE_NAME = fLines[9].split('=')[1].strip()
+
 # creating/connecting the main log file
-lm = LogManager(rospy.get_param('logger'))
+lm = LogManager(str(rospy.get_param('logger')))
 
 # creating speech recognition recognizer
 recognizer = sr.Recognizer()
 
 # sets microphone
-mic = sr.Microphone()
+micIndex = sr.Microphone.list_microphone_names().index(MICROPHONE_NAME)
+mic = sr.Microphone(device_index=micIndex)
+lm.write('Microphone index is chosen: ' + str(micIndex))
+lm.write('Microphone name: ' + MICROPHONE_NAME)
 
 # gets the user name
-name = rospy.get_param('name')
+name = str(rospy.get_param('name'))
 
 # getting the values from the config file. they can be modified.
 with open('./config.txt', 'r') as f:
@@ -58,7 +72,7 @@ def handle_speech_recognition(req):
         lm.write('WARNING: Couldn\'t understand')
 
         # if the user cannot be understood by the speech recognition service
-        return tts_srvResponse('<Couldn\'t understand!>')
+        return tts_srvResponse('<NOT_UNDERSTOOD>')
 
 def speech_recognition_server():
     # initializing the ROS node
