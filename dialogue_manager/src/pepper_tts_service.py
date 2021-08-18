@@ -7,8 +7,13 @@ from log_manager import LogManager
 import rospy
 from dialogue_manager.srv import tts_srv, tts_srvResponse
 
+import os
+
+# changing directory to the file's directory
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 # creating/connecting the main log file
-lm = LogManager(rospy.get_param('logger'))
+lm = LogManager(str(rospy.get_param('logger')))
 
 # getting the values from the config file. they can be modified.
 with open('./config.txt', 'r') as f:
@@ -16,9 +21,12 @@ with open('./config.txt', 'r') as f:
 
     PEPPER_IP = fLines[0].split('=')[1].strip()
     PEPPER_PORT = int(fLines[1].split('=')[1].strip())
+    PEPPER_SPEAK_SPEED = int(fLines[10].split('=')[1].strip())
 
 # gets NAOqi module proxies for text to speech and running behaviors 
 tts = ALProxy("ALTextToSpeech", PEPPER_IP, PEPPER_PORT)
+tts.setParameter("speed", PEPPER_SPEAK_SPEED)
+
 behavior = ALProxy('ALBehaviorManager', PEPPER_IP, PEPPER_PORT)
 
 def handle_text_to_speech(req):
