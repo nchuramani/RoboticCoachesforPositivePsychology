@@ -80,6 +80,8 @@ class LogManager():
                 for i in text:
                     if i == '\n':
                         count += 1
+                    else:
+                        break
 
                 text = '\n'*count + str(datetime.now()).replace(' ', '_') + ' - ' + text[count:]
             else:
@@ -185,7 +187,7 @@ class LogManager():
         self.separate(1)
         
         try:
-            self.write(self.table.get_string(), False)
+            self.write(self.table.get_string(), False, False)
         except AttributeError as e:
             self.write('No table found.')
 
@@ -217,13 +219,71 @@ class LogManager():
             with open(self.file, 'r') as f:
                 lines = f.readlines()[-count:]
 
-                if not dateTime:
-                    # excluding datetime from the lines
-                    lines = list(map(lambda x: ' '.join(x.split()[2:])))
+            lines = list(map(lambda x: x[:-1], lines))
+                
+            if not dateTime:
+                # excluding datetime from the lines
+                for i in range(len(lines)):
+                    try:
+                        lines[i] = ' '.join(lines[i].split()[2:])
+                    except:
+                        pass
 
-                return lines
+            lines = list(filter(lambda x: x != '', lines))
+
+            return lines
+
         except:
             return False
+
+    def getTimeIntervalLines(self, start, stop, dateTime=True):
+        '''
+        Return the lines between the specified datetime interval. Returns 'False' if the time interval is invalid.
+
+        PARAMETERS:
+        -----------
+        start: Starting time of the interval. It should be in the datetime.now() format\n
+        stop: Ending time of the interval. It should be in the datetime.now() format\n
+        dateTime: Include datetime while returning the lines
+        '''
+
+        # holds the requested lines
+        interval = []
+
+        try:
+            with open(self.file, 'r') as f:
+                lines = f.readlines()
+
+            lines = list(map(lambda x: x[:-1], lines))
+
+            for line in lines:
+                try:
+                    # extracting the line's datetime
+                    lineTime = line.split(' ')[0]
+
+                    # converting datetime from string to datetime format
+                    lineTime = datetime.strptime(lineTime, '%Y-%m-%d_%H:%M:%S.%f')
+
+                    # if lineTime is between the interval
+                    if lineTime >= start and lineTime <= stop:
+                        if not dateTime:
+                            # excluding datetime from the 
+                            try:
+                                line = ' '.join(line.split()[2:])
+                            except:
+                                pass
+
+                        interval.append(line)
+
+                except:
+                    pass
+
+            return interval
+
+        except:
+            return False
+
+        
 
     def getLogPath(self):
         '''
