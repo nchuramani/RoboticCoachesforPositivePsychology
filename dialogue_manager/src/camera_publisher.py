@@ -11,7 +11,7 @@ import numpy as np
 import cv2
 
 # creating/connecting the main log file
-lm = LogManager(rospy.get_param('logger'))
+lm = LogManager(str(rospy.get_param('logger')))
 
 # creating bridge to convert images to ROS publishable format
 bridge = CvBridge()
