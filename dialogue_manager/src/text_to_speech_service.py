@@ -18,7 +18,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # creating/connecting the main log file
-lm = LogManager(rospy.get_param('logger'))
+lm = LogManager(str(rospy.get_param('logger')))
 
 def handle_text_to_speech(req):
     # initializing the gtts
