@@ -126,7 +126,7 @@ class PredProcess(smach.State):
         lm.write('Counter set to 0', printText=False)
 
         if self.first_time:
-            tts_proxy(nlg.dialogue['introduction'][0], 'hello')
+            tts_proxy(nlg.dialogue['introduction'][0])
             tts_proxy(nlg.dialogue['introduction'][1])
 
             lm.write('User name is initialized as [' + name.upper() + ']')

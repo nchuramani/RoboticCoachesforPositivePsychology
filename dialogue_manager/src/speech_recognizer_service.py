@@ -23,7 +23,7 @@ lm = LogManager(str(rospy.get_param('logger')))
 
 # creating speech recognition recognizer
 recognizer = sr.Recognizer()
-
+print(sr.Microphone.list_microphone_names())
 # sets microphone
 micIndex = sr.Microphone.list_microphone_names().index(MICROPHONE_NAME)
 mic = sr.Microphone(device_index=micIndex)
