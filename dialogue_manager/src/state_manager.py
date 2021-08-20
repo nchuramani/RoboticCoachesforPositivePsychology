@@ -91,6 +91,8 @@ def speech_proxy(timeout='', dimensions=False):
     lm_flow.tableAddRow([name.upper(), speech_text.outp])
 
     if dimensions:
+        lm.write('\nArousal Valence frames start time:' + str(start))
+        lm.write('Arousal Valence frames stop time:' + str(stop) + '\n')
         return speech_text, lm_frame.getTimeIntervalLines(start, stop, False)
 
     return speech_text
