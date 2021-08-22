@@ -1,7 +1,7 @@
 <br />
 <p align="center">
   <a href="https://www.cl.cam.ac.uk/~hg410/people.html">
-    <img src="img/Cambridge.png" alt="Cambridge Logo" width="420" height="140">
+    <img src="dialogue_manager/img/Cambridge.png" alt="Cambridge Logo" width="420" height="140">
   </a>
 </p>
 
@@ -13,7 +13,7 @@ This repository holds the source code for the Mental Well-being Robot Coach proj
 
 <br />
 <p align="center">
-    <img src="img/Experiment.png" alt="Experiment Design" width="680" height="300">
+    <img src="dialogue_manager/img/Experiment.png" alt="Experiment Design" width="680" height="300">
   </a>
 </p>
 
@@ -22,7 +22,7 @@ This repository holds the source code for the Mental Well-being Robot Coach proj
 
 ## Pepper Robot
 
-<img src="img/PepperRobot.png" align="right" width="250px" />
+<img src="dialogue_manager/img/PepperRobot.png" align="right" width="250px" />
 
 SoftBank's *Pepper Robot* is used for testing and experiments.
 
@@ -40,7 +40,7 @@ Robot can be used either with the official simulation software of the SoftBank,
 Project uses the **FaceChannel** neural network that is a light-weight neural network to recognize emotion from facial expressions with much fewer parameters than common neural networks.
 
 
-![FaceChannel](img/FaceChannel.png)
+![FaceChannel](dialogue_manager/img/FaceChannel.png)
 
 <br>
 
@@ -67,7 +67,7 @@ Project utilizes a Python library named **Smach**. This allows us to develop a s
 
 <br>
 
-![State Machine](img/Smach.png)
+![State Machine](dialogue_manager/img/Smach.png)
 
 A custom state machine can be created and used for different purposes.
 
