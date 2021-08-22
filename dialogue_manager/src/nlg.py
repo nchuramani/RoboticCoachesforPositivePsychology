@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 # a dictionary that keeps and the whole script under categories
-dialogue = {"general":  ["I couldn't understand what you said. Can you please repeat it?"],
+dialogue = {"general":  ["I couldn't understand what you said. Can you please repeat it?",
+                        "Please answer with the requested response."],
 
             "yes/no":   [["yes", "yeah", "yep", "yeap", "okay", "fine", "true", "aye", "definitely", "certainly", "exactly", "affirmative", "gladly", "good", "nice", "of course", "positive", "precisely", "sure"],
                          ["no", "nope", "not", "nay", "never", "nae", "naw", "nah"]],
@@ -52,21 +53,21 @@ dialogue = {"general":  ["I couldn't understand what you said. Can you please re
             "introduction": ["Hi", #Wave
                             "My name is Pepper.",
                             "Nice to meet you!",
-                            " We're going to do positive psychology practices today. I'll explain what that means in a Minute. Are you okay with that? Please say 'yes' or 'no'.",
-                            " Okay. Positive psychology practices aim to guide the participant to focus on the positive things in their life. Often, the negative things in our life get much of our attention, while the positive things are harder to focus on.",
-                            " First, we will focus on your past, then talk about your present, and then look at the future. With this, we aim to help you think optimistically about your future.",
-                            " We will do each exercise three times focussing on these time periods. With this, we aim to help you reflect on all three time periods in your life, and cast our attention towards the future. First, we will talk about impactful events in your life. Next, we will do a gratitude building exercise, and then an exercise focusing on your accomplishments. You can go into as much or as little detail as you'd like.",
-                            " We have about 40 minutes together.",
-                            " If you have any questions before we begin, I can call in the experimenter to answer them. Do you have any questions? Please say 'yes' or 'no'.",
-                            " Great, let's begin then.",
-                            " Please come in, Experimenter."],
+                            "We're going to do positive psychology practices today. I'll explain what that means in a Minute. Are you okay with that? Please say 'yes' or 'no'.",
+                            "Okay. Positive psychology practices aim to guide the participant to focus on the positive things in their life. Often, the negative things in our life get much of our attention, while the positive things are harder to focus on.",
+                            "First, we will focus on your past, then talk about your present, and then look at the future. With this, we aim to help you think optimistically about your future.",
+                            "We will do each exercise three times focussing on these time periods. With this, we aim to help you reflect on all three time periods in your life, and cast our attention towards the future. First, we will talk about impactful events in your life. Next, we will do a gratitude building exercise, and then an exercise focusing on your accomplishments. You can go into as much or as little detail as you'd like.",
+                            "We have about 40 minutes together.",
+                            "If you have any questions before we begin, I can call in the {} to answer them. Do you have any questions? Please say 'yes' or 'no'.",
+                            "Great, let's begin then.",
+                            "Please come in, {}."],
 
             "past":     {"impactful": ["First, let's talk about three impactful things that happened in your past - any three things that affected you in the recent past, in the past month or a few weeks. Can you tell me any three impactful things, one at a time?",
                                     "If you have trouble coming up with these, remember that it does  not need to be huge, just something impactful. It could have been a rainy or a sunny day in the recent past, or having a brunch with your flatmate, or meeting a friend.",
                                     "How does talking about this to me make you feel now?",
                                     "How do you think this event is affecting you now?",
                                     "Thank you for sharing this with me.",
-                                    "Could you tell me about your second impactful experience you have had in the recent past?"],
+                                    "Could you tell me about your {} impactful experience you have had in the recent past?"],
 
                         "grateful": ["That was the end of the first exercise.",
                                     "This next exercise will focus on developing gratitude. Cultivating gratitude can help increase positive affect, subjective happiness and life satisfaction.",
@@ -97,7 +98,7 @@ dialogue = {"general":  ["I couldn't understand what you said. Can you please re
                                     "How does talking about this to make you feel now?",
                                     "How do you think the event is affecting you now?",
                                     "Thank you for sharing this with me.",
-                                    "Could you tell me about your second/third impactful experience you have had in the recent past?"],
+                                    "Could you tell me about your {} impactful experience you have had in the recent past?"],
                                     
                         "grateful": ["That was the end of the first exercise.",
                                     "Now let's move to positive psychology interventions regarding the present. Let's talk about what you are grateful for right now. What conditions in your life do you appreciate? Please tell me three things, one thing at a time.",
@@ -128,7 +129,7 @@ dialogue = {"general":  ["I couldn't understand what you said. Can you please re
                                         "How does talking about this thing potentially happening make you feel now?",
                                         "How would that thing affect you in the future?",
                                         "Thank you for sharing this with me",
-                                        "Could you tell me about your second/third impactful experience you imagine having?"],
+                                        "Could you tell me about your {} impactful experience you imagine having?"],
                         
                         "grateful": ["That was the end of the first exercise regarding the future.",
                                     "Now let's move on to the positive psychology interventions regarding the future. In positive psychology, we place an emphasis on imagining optimistic futures, which has been shown to reduce pessimism, negative affect, and emotional exhaustion.",
@@ -154,5 +155,4 @@ dialogue = {"general":  ["I couldn't understand what you said. Can you please re
                                             "If you achieve this, what difference will it make to you?"],
                                             "Thank you for sharing this with me."]},
                                             
-            "goodbye":  ["Thank you for completing the sessions with me. I hope this was useful for you. The human researcher will now enter the room to ask you a few questions, before you leave.",
-                        "Sorry, I couldn't understand you too many times. Please come in, Experimenter!"]}
+            "goodbye":  "Thank you for completing the sessions with me. I hope this was useful for you. The human researcher will now enter the room to ask you a few questions, before you leave."}

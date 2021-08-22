@@ -19,7 +19,6 @@ from log_manager import LogManager
 
 import rospy
 from dialogue_manager.srv import *
-from dialogue_manager.msg import Emotion
 
 import rosnode
 import rosgraph
@@ -36,16 +35,17 @@ with open('./config.txt', 'r') as f:
 
     TIMEOUT = fLines[2].split('=')[1].strip()
     DELAY = float(fLines[3].split('=')[1].strip())
+    EXPERIMENTER = fLines[11].split('=')[1].strip()
 
 # creating the main log file
-lm = LogManager(str(rospy.get_param('logger')))
+lm = LogManager('main')
 
 # creating log file for the state transitions and dialogue table
-lm_flow = LogManager(str(rospy.get_param('logger')) + '_flow')
+lm_flow = LogManager('flow')
 lm_flow.createTable(['State', 'Condition', 'Speaker', 'Dialogue'])
 
 # creating/connecting log file to get the frames' dimensional outputs
-lm_frame = LogManager(str(rospy.get_param('logger')) + '_frames')
+lm_arousal_valence = LogManager('arousal_valence')
 
 # initializing the ROS node
 rospy.init_node('state_manager', anonymous=True)
@@ -65,48 +65,77 @@ try:
 except rospy.ServiceException as e:
     lm.write('WARNING: Service call failed {}!'.format(e))
 
-'''
-# counts misunderstoods
-counter = 0
-
-def countDecorator(func):
-    def inner(*args, **kwargs):
-        speech_text = func(*args, **kwargs)
-        
-        if speech_text.outp == '<NOT_UNDERSTOOD>':
-            counter += 1
-
-    return inner
-'''
 
 def tts_proxy(inp, behavior=''):
     tts_ros_proxy(inp, behavior)
     lm_flow.tableAddRow(['PEPPER', inp])
 
-def speech_proxy(timeout='', dimensions=False):
-    start = datetime.now()
-    speech_text = speech_ros_proxy(timeout, '')
-    stop = datetime.now()
+def speech_proxy(timeout='', dimensions=False, experimenterAnswer=False):
+    counter = 0
 
-    lm_flow.tableAddRow([name.upper(), speech_text.outp])
+    # asks for answer if not understands until 3 times.
+    while counter < 3:
+        start = datetime.now()
+        speech_text = speech_ros_proxy(timeout, '')
+        stop = datetime.now()
 
+        if speech_text.outp == '<NOT_UNDERSTOOD>':
+            counter += 1
+            lm.write('Speech could not be understood ' + str(counter) + ' times.')
+            if counter < 3:
+                tts_proxy(nlg.dialogue['general'][0])
+
+        else:
+            break
+
+    answer = speech_text.outp
+
+    # if not understood 3 times.
+    if counter == 3:
+        # asks the experimenter to type the answer of the user instead of asking again
+        if experimenterAnswer:
+            lm.write('Not understood too many times. Waiting for the experimenter to type the answer...')
+            answer = raw_input('{}, please type the user\'s answer: '.format(EXPERIMENTER))
+            lm.write('[Typed answer]')
+
+        else:
+            lm.write('Not understood too many times. Waiting for the experimenter to press enter to continue...')
+            raw_input('Press enter to continue...')
+            lm.write('[Pressed enter to continue]')
+
+    # adds dialogue to the table of flow log file
+    lm_flow.tableAddRow([name.upper(), answer])
+
+    # if the arousal-valence values of the speech requested
     if dimensions:
         lm.write('\nArousal Valence frames start time:' + str(start))
         lm.write('Arousal Valence frames stop time:' + str(stop) + '\n')
-        return speech_text, lm_frame.getTimeIntervalLines(start, stop, False)
+        return speech_text, lm_arousal_valence.getTimeIntervalLines(start, stop, False, lines=rospy.get_param('arousal_valence'))
 
-    return speech_text
+    return answer
+
+
+#initiazes states
+def setStateInfo(stateName):
+    lm.write('\nExecuting state ' + stateName)
+    lm_flow.setTableState(stateName)
+
+    lm_arousal_valence.separate(1)
+    lm_arousal_valence.write(stateName, False, False)
+    lm_arousal_valence.separate(1)
+
+    rospy.set_param('current_state', stateName)
 
 class PredProcess(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                        outcomes=['introduction', 'goodbye', 
+                        outcomes=['introduction',
                                 'past_impactful', 'past_grateful', 'past_accomplishments',
                                 'present_impactful', 'present_grateful', 'present_accomplishments',
                                 'future_impactful', 'future_grateful', 'future_accomplishments',
                                 'feedback'],
-                        input_keys=['kb_args', 'task', 'interaction'],
-                        output_keys=['kb_args', 'status', 'condition'])
+                        input_keys=['task', 'interaction'],
+                        output_keys=['condition'])
 
         self.first_time = True
 
@@ -117,23 +146,13 @@ class PredProcess(smach.State):
         self.task_condition = {'past':conditions[0], 'present':conditions[1], 'future': conditions[2]}
 
     def execute(self, userdata):
-        lm.write('\nExecuting state PREDPROCESS')
-        lm_flow.setTableState('PREDPROCESS')
-
-        lm_frame.separate(1)
-        lm_frame.write('PREDPROCESS', False, False)
-        lm_frame.separate(1)
-
-        counter = 0
-        lm.write('Counter set to 0', printText=False)
+        setStateInfo('PREDPROCESS')
 
         if self.first_time:
             tts_proxy(nlg.dialogue['introduction'][0])
             tts_proxy(nlg.dialogue['introduction'][1])
 
             lm.write('User name is initialized as [' + name.upper() + ']')
-
-            userdata.kb_args['name'] = name
 
             self.first_time = False
 
@@ -160,98 +179,66 @@ class PredProcess(smach.State):
 class Introduction(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'introduction'],
-                             input_keys=['kb_args'],
-                             output_keys=['status', 'kb_args'])
+                             outcomes=['predprocess', 'introduction'])
                              
     def execute(self, userdata):
-        lm.write('\nExecuting state INTRODUCTION')
-        lm_flow.setTableState('INTRODUCTION')
-
-        lm_frame.separate(1)
-        lm_frame.write('INTRODUCTION', False, False)
-        lm_frame.separate(1)
-
-        sentence = nlg.dialogue['introduction'][2].format(userdata.kb_args['name'])
+        setStateInfo('INTRODUCTION')
+        
+        sentence = nlg.dialogue['introduction'][2]
         sentence += nlg.dialogue['introduction'][3]
         tts_proxy(sentence)
 
-        counter = 0
-
         while True:
-            if counter == 3:
-                lm.write('Not understood too many times. Waiting for the experimenter to press enter to continue...')
-                raw_input('Press enter to continue...')
-                lm.write('[Pressed enter to continue]')
 
-            else:
-                speech_text = speech_proxy()
+            speech_text = speech_proxy(experimenterAnswer=True)
 
-            if any(i in speech_text.outp.lower() for i in nlg.dialogue['yes/no'][0]) or counter == 3:
+            if any(i in speech_text.lower() for i in nlg.dialogue['yes/no'][0]):
                 sentence = nlg.dialogue['introduction'][4]
                 sentence += nlg.dialogue['introduction'][5]
                 sentence += nlg.dialogue['introduction'][6]
                 sentence += nlg.dialogue['introduction'][7]
-                sentence += nlg.dialogue['introduction'][8]
+                sentence += nlg.dialogue['introduction'][8].format(EXPERIMENTER)
                 tts_proxy(sentence)
 
-                counter = 0
+                while True:
 
-                while counter < 3:
-                    speech_text = speech_proxy()
+                    speech_text = speech_proxy(experimenterAnswer=True)
 
-                    if any(i in speech_text.outp.lower() for i in nlg.dialogue['yes/no'][1]) and speech_text.outp != '<NOT_UNDERSTOOD>':
+                    if any(i in speech_text.lower() for i in nlg.dialogue['yes/no'][1]):
                         tts_proxy(nlg.dialogue['introduction'][9])
 
                         return 'predprocess'
 
-                    elif any(i in speech_text.outp.lower() for i in nlg.dialogue['yes/no'][0]):
-                        tts_proxy(nlg.dialogue['introduction'][10])
+                    elif any(i in speech_text.lower() for i in nlg.dialogue['yes/no'][0]):
+                        tts_proxy(nlg.dialogue['introduction'][10].format(EXPERIMENTER))
                         raw_input('Press enter to continue...')
                         lm.write('[Pressed enter to continue]')
 
                         return 'predprocess'
 
                     else:
-                        counter += 1
-                        lm.write('Speech could not be understood ' + str(counter) + ' times.')
-                        if counter < 3:
-                            tts_proxy(nlg.dialogue['general'][0])
+                        tts_proxy(nlg.dialogue['general'][1])
 
-                lm.write('Not understood too many times. Waiting for the experimenter to press ente to continue...')
-                raw_input('Press enter to continue...')
-                lm.write('[Pressed enter to continue]')
-
-                return 'predprocess'
-
-            elif any(i in speech_text.outp.lower() for i in nlg.dialogue['yes/no'][1]) and speech_text.outp != '<NOT_UNDERSTOOD>':
-                tts_proxy(nlg.dialogue['introduction'][10])
+            elif any(i in speech_text.lower() for i in nlg.dialogue['yes/no'][1]):
+                tts_proxy(nlg.dialogue['introduction'][10].format(EXPERIMENTER))
                 raw_input('Press enter to continue...')
                 lm.write('[Pressed enter to continue]')
 
                 return 'introduction'
 
             else:
-                counter += 1
-                lm.write('Speech could not be understood ' + str(counter) + ' times.')
-                if counter < 3:
-                    tts_proxy(nlg.dialogue['general'][0])
+                tts_proxy(nlg.dialogue['general'][1])
 
 
-class PastImpactful(smach.State): #add last sentence and goodbye
+class PastImpactful(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'e_detect', 'goodbye'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state PAST_IMPACTFUL')
-        lm_flow.setTableState('PAST_IMPACTFUL')
-
-        lm_frame.separate(1)
-        lm_frame.write('PAST_IMPACTFUL', False, False)
-        lm_frame.separate(1)
+        setStateInfo('PAST_IMPACTFUL')
 
         userdata.interaction = 'grateful'
 
@@ -259,7 +246,7 @@ class PastImpactful(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['past']['impactful'][1])
 
             speech_text = speech_proxy()
@@ -285,20 +272,15 @@ class PastImpactful(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class PastGrateful(smach.State): #add last sentence and goodbye
+class PastGrateful(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'e_detect', 'goodbye'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state PAST_GRATEFUL')
-        lm_flow.setTableState('PAST_GRATEFUL')
-
-        lm_frame.separate(1)
-        lm_frame.write('PAST_GRATEFUL', False, False)
-        lm_frame.separate(1)
+        setStateInfo('PAST_GRATEFUL')
 
         userdata.interaction = 'accomplishments'
 
@@ -309,7 +291,7 @@ class PastGrateful(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['past']['grateful'][3])
 
             speech_text = speech_proxy()
@@ -339,20 +321,15 @@ class PastGrateful(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class PastAccomplishments(smach.State): #add last sentence and goodbye
+class PastAccomplishments(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'e_detect'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state PAST_ACCOMPLISHMENTS')
-        lm_flow.setTableState('PAST_ACCOMPLISHMENTS')
-
-        lm_frame.separate(1)
-        lm_frame.write('PAST_ACCOMPLISHMENTS', False, False)
-        lm_frame.separate(1)
+        setStateInfo('PAST_ACCOMPLISHMENTS')
 
         userdata.task = 'present'
         userdata.interaction = 'feedback'
@@ -361,7 +338,7 @@ class PastAccomplishments(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['past']['accomplishments'][1])
 
             speech_text = speech_proxy()
@@ -382,7 +359,7 @@ class PastAccomplishments(smach.State): #add last sentence and goodbye
         tts_proxy(nlg.dialogue['past']['accomplishments'][4])
 
         if userdata.condition == 'c2' or userdata.condition == 'c3':
-            sentence = random.choice(nlg.dialogue['phrases'][0]).format(userdata.kb_args['name'])
+            sentence = random.choice(nlg.dialogue['phrases'][0])
             sentence += random.choice(nlg.dialogue['phareses'][1])
             tts_proxy(sentence)
 
@@ -391,20 +368,15 @@ class PastAccomplishments(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class PresentImpactful(smach.State): #add last sentence and goodbye
+class PresentImpactful(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'e_detect'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state PRESENT_IMPACTFUL')
-        lm_flow.setTableState('PRESENT_IMPACTFUL')
-
-        lm_frame.separate(1)
-        lm_frame.write('PRESENT_IMPACTFUL', False, False)
-        lm_frame.separate(1)
+        setStateInfo('PRESENT_IMPACTFUL')
 
         userdata.interaction = 'grateful'
 
@@ -412,7 +384,7 @@ class PresentImpactful(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['present']['impactful'][1])
 
             speech_text = speech_proxy()
@@ -438,20 +410,15 @@ class PresentImpactful(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class PresentGrateful(smach.State): #add last sentence and goodbye
+class PresentGrateful(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'e_detect'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state PRESENT_GRATEFUL')
-        lm_flow.setTableState('PRESENT_GRATEFUL')
-
-        lm_frame.separate(1)
-        lm_frame.write('PRESENT_GRATEFUL', False, False)
-        lm_frame.separate(1)
+        setStateInfo('PRESENT_GRATEFUL')
 
         userdata.interaction = 'accomplishments'
 
@@ -461,7 +428,7 @@ class PresentGrateful(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['present']['grateful'][2])
 
             speech_text = speech_proxy()
@@ -491,20 +458,15 @@ class PresentGrateful(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class PresentAccomplishments(smach.State): #add last sentence and goodbye
+class PresentAccomplishments(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'e_detect'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state PRESENT_ACCOMPLISHMENTS')
-        lm_flow.setTableState('PRESENT_ACCOMPLISHMENTS')
-
-        lm_frame.separate(1)
-        lm_frame.write('PRESENT_ACCOMPLISHMENTS', False, False)
-        lm_frame.separate(1)
+        setStateInfo('PRESENT_ACCOMPLISHMENTS')
 
         userdata.task = 'future'
         userdata.interaction = 'feedback'
@@ -513,7 +475,7 @@ class PresentAccomplishments(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['present']['accomplishments'][1])
 
             speech_text = speech_proxy()
@@ -534,7 +496,7 @@ class PresentAccomplishments(smach.State): #add last sentence and goodbye
         tts_proxy(nlg.dialogue['present']['accomplishments'][4])
 
         if userdata.condition == 'c2' or userdata.condition == 'c3':
-            sentence = random.choice(nlg.dialogue['phrases'][0]).format(userdata.kb_args['name'])
+            sentence = random.choice(nlg.dialogue['phrases'][0])
             sentence += random.choice(nlg.dialogue['phrases'][1])
             tts_proxy(sentence)
 
@@ -543,20 +505,15 @@ class PresentAccomplishments(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class FutureImpactful(smach.State): #add last sentence and goodbye
+class FutureImpactful(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'e_detect'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state FUTURE_IMPACTFUL')
-        lm_flow.setTableState('FUTURE_IMPACTFUL')
-
-        lm_frame.separate(1)
-        lm_frame.write('FUTURE_IMPACTFUL', False, False)
-        lm_frame.separate(1)
+        setStateInfo('FUTURE_IMPACTFUL')
 
         userdata.interaction = 'grateful'
 
@@ -566,7 +523,7 @@ class FutureImpactful(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['future']['impactful'][2])
 
             speech_text = speech_proxy()
@@ -592,20 +549,15 @@ class FutureImpactful(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class FutureGrateful(smach.State): #add last sentence and goodbye
+class FutureGrateful(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'e_detect'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state FUTURE_GRATEFUL')
-        lm_flow.setTableState('FUTURE_GRATEFUL')
-
-        lm_frame.separate(1)
-        lm_frame.write('FUTURE_GRATEFUL', False, False)
-        lm_frame.separate(1)
+        setStateInfo('FUTURE_GRATEFUL')
 
         userdata.interaction = 'accomplishments'
 
@@ -616,7 +568,7 @@ class FutureGrateful(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['future']['grateful'][3])
 
             speech_text = speech_proxy()
@@ -646,20 +598,15 @@ class FutureGrateful(smach.State): #add last sentence and goodbye
         return 'predprocess'
 
 
-class FutureAccomplishments(smach.State): #add last sentence and goodbye
+class FutureAccomplishments(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['predprocess', 'goodbye', 'e_detect'],
-                             input_keys=['kb_args', 'condition'],
-                             output_keys=['status', 'task', 'interaction', 'dimensions'])
+                             outcomes=['predprocess', 'e_detect'],
+                             input_keys=['condition'],
+                             output_keys=['task', 'interaction', 'dimensions'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state FUTURE_ACCOMPLISHMENTS')
-        lm_flow.setTableState('FUTURE_ACCOMPLISHMENTS')
-
-        lm_frame.separate(1)
-        lm_frame.write('FUTURE_ACCOMPLISHMENTS', False, False)
-        lm_frame.separate(1)
+        setStateInfo('FUTURE_ACCOMPLISHMENTS')
 
         userdata.task = 'goodbye'
         userdata.interaction = 'feedback'
@@ -670,7 +617,7 @@ class FutureAccomplishments(smach.State): #add last sentence and goodbye
 
         speech_text = speech_proxy(TIMEOUT)
 
-        while speech_text.outp == '<NOT_RESPONDED>':
+        while speech_text == '<NOT_RESPONDED>':
             tts_proxy(nlg.dialogue['future']['accomplishments'][2])
 
             speech_text = speech_proxy()
@@ -691,7 +638,7 @@ class FutureAccomplishments(smach.State): #add last sentence and goodbye
         tts_proxy(nlg.dialogue['future']['accomplishments'][5])
 
         if userdata.condition == 'c2' or userdata.condition == 'c3':
-            sentence = nlg.dialogue['phrases'][0][3].format(userdata.kb_args['name'])
+            sentence = nlg.dialogue['phrases'][0][3]
             sentence += nlg.dialogue['phrases'][4]
             tts_proxy(sentence)
 
@@ -703,17 +650,12 @@ class FutureAccomplishments(smach.State): #add last sentence and goodbye
 class Feedback(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['goodbye', 'survey'],
-                             input_keys=['kb_args', 'condition', 'task'],
-                             output_keys=['status', 'interaction'])
+                             outcomes=['survey'],
+                             input_keys=['condition', 'task'],
+                             output_keys=['interaction'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state FEEDBACK')
-        lm_flow.setTableState('FEEDBACK')
-
-        lm_frame.separate(1)
-        lm_frame.write('FEEDBACK', False, False)
-        lm_frame.separate(1)
+        setStateInfo('FEEDBACK')
 
         userdata.interaction = 'impactful'
 
@@ -755,16 +697,10 @@ class Survey(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['predprocess'],
-                             input_keys=['kb_args'],
-                             output_keys=['status', 'task', 'interaction'])
+                             output_keys=['task', 'interaction'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state SURVEY')
-        lm_flow.setTableState('SURVEY')
-
-        lm_frame.separate(1)
-        lm_frame.write('SURVEY', False, False)
-        lm_frame.separate(1)
+        setStateInfo('SURVEY')
 
         raw_input('Press enter when the survey is finished...')
         lm.write('[Survey is finished and pressed enter]')
@@ -775,24 +711,12 @@ class Survey(smach.State):
 class Goodbye(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
-                             outcomes=['terminate'],
-                             input_keys=['kb_args', 'status'])
+                             outcomes=['terminate'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state GOODBYE')
-        lm_flow.setTableState('GOODBYE')
+        setStateInfo('GOODBYE')
 
-        lm_frame.separate(1)
-        lm_frame.write('GOODBYE', False, False)
-        lm_frame.separate(1)
-
-        if userdata.status == 'not_understood':
-            sentence = nlg.dialogue['goodbye'][1].format(userdata.kb_args['name'])
-            tts_proxy(sentence, 'goodbye')
-
-        else:
-            sentence = random.choice(nlg.dialogue['goodbye'][0]).format(userdata.kb_args['name'])
-            tts_proxy(sentence, 'goodbye')
+        tts_proxy(nlg.dialogue['goodbye'][0])
 
         return 'terminate'
 
@@ -805,12 +729,7 @@ class EmotionDetection(smach.State):
                              output_keys=['dimension_mean'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state E_DETECTION')
-        lm_flow.setTableState('E_DETECTION')
-
-        lm_frame.separate(1)
-        lm_frame.write('E_DETECTION', False, False)
-        lm_frame.separate(1)
+        setStateInfo('E_DETECTION')
 
         try:
             # getting dimension values
@@ -855,15 +774,10 @@ class Quadrant_1(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['predprocess'],
-                             input_keys=['kb_args', 'dimension_mean'])
+                             input_keys=['dimension_mean'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state QUADRANT_1')
-        lm_flow.setTableState('QUADRANT_1')
-
-        lm_frame.separate(1)
-        lm_frame.write('QUADRANT_1', False, False)
-        lm_frame.separate(1)
+        setStateInfo('QUADRANT_1')
 
         dimensionsMean = userdata.dimension_mean
         arousal, valence = dimensionsMean[0][0][0], dimensionsMean[1][0][0]
@@ -888,15 +802,10 @@ class Quadrant_2(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['predprocess'],
-                             input_keys=['kb_args', 'dimension_mean'])
+                             input_keys=['dimension_mean'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state QUADRANT_2')
-        lm_flow.setTableState('QUADRANT_2')
-
-        lm_frame.separate(1)
-        lm_frame.write('QUADRANT_2', False, False)
-        lm_frame.separate(1)
+        setStateInfo('QUADRANT_2')
 
         dimensionsMean = userdata.dimension_mean
         arousal, valence = dimensionsMean[0][0][0], dimensionsMean[1][0][0]
@@ -922,21 +831,15 @@ class Quadrant_3(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['predprocess'],
-                             input_keys=['kb_args', 'dimension_mean'])
+                             input_keys=['dimension_mean'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state QUADRANT_3')
-        lm_flow.setTableState('QUADRANT_3')
-
-        lm_frame.separate(1)
-        lm_frame.write('QUADRANT_3', False, False)
-        lm_frame.separate(1)
+        setStateInfo('QUADRANT_3')
         
         lm.write('\nEmotion: <SAD>')
 
         tts_proxy(random.choice(nlg.dialogue['emotion'][0]))
             
-
         return 'predprocess'
 
 
@@ -944,15 +847,10 @@ class Quadrant_4(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                              outcomes=['predprocess'],
-                             input_keys=['kb_args', 'dimension_mean'])
+                             input_keys=['dimension_mean'])
 
     def execute(self, userdata):
-        lm.write('\nExecuting state QUADRANT_4')
-        lm_flow.setTableState('QUADRANT_4')
-
-        lm_frame.separate(1)
-        lm_frame.write('QUADRANT_4', False, False)
-        lm_frame.separate(1)
+        setStateInfo('QUADRANT_4')
 
         lm.write('\nEmotion: <HAPPY>')
 
@@ -981,14 +879,9 @@ def main():
         lm.write('State machine is created.')
 
         # use it only for using smach_viewer to view the state machine graph
-        sis = smach_ros.IntrospectionServer('server_name', sm, '/SM_ROOT')
-        sis.start()
-
-        # to inform states about the status ('not_understood', 'understood')
-        sm.userdata.sm_status = 'understood'
-
-        # arguments for the knowledge base
-        sm.userdata.sm_kb_args = {'name': 'User'}
+        # requires smach_viewer. see: http://wiki.ros.org/smach_viewer
+        #sis = smach_ros.IntrospectionServer('server_name', sm, '/SM_ROOT')
+        #sis.start()
 
         # dialogue tense
         sm.userdata.sm_task = 'past'
@@ -1009,7 +902,6 @@ def main():
         with sm:
             smach.StateMachine.add('PREDPROCESS', PredProcess(),
                                    transitions={'introduction':'INTRODUCTION',
-                                                'goodbye':'GOODBYE',
                                                 'past_impactful':'PAST_IMPACTFUL',
                                                 'past_grateful':'PAST_GRATEFUL',
                                                 'past_accomplishments':'PAST_ACCOMPLISHMENTS',
@@ -1020,18 +912,13 @@ def main():
                                                 'future_grateful':'FUTURE_GRATEFUL',
                                                 'future_accomplishments':'FUTURE_ACCOMPLISHMENTS',
                                                 'feedback':'FEEDBACK'},
-                                   remapping={'status':'sm_status',
-                                              'kb_args':'sm_kb_args',
-                                              'task':'sm_task',
+                                   remapping={'task':'sm_task',
                                               'condition':'sm_condition',
                                               'interaction':'sm_interaction'})
             
             smach.StateMachine.add('INTRODUCTION', Introduction(),
                                    transitions={'predprocess':'PREDPROCESS',
-                                                'goodbye':'GOODBYE',
-                                                'introduction':'INTRODUCTION'},
-                                   remapping={'status':'sm_status',
-                                              'kb_args':'sm_kb_args'})
+                                                'introduction':'INTRODUCTION'})
 
             states =    {'PAST_IMPACTFUL':PastImpactful(),
                         'PAST_GRATEFUL':PastGrateful(),
@@ -1046,34 +933,24 @@ def main():
             for i in states :
                 smach.StateMachine.add(i, states[i],
                                     transitions={'predprocess':'PREDPROCESS',
-                                                 'goodbye':'GOODBYE',
                                                  'e_detect':'E_DETECT'},
-                                    remapping={'status':'sm_status',
-                                                'kb_args':'sm_kb_args',
-                                                'condition':'sm_condition',
+                                    remapping={'condition':'sm_condition',
                                                 'task':'sm_task',
                                                 'interaction':'sm_interaction',
                                                 'dimensions':'sm_dimensions'})
 
             smach.StateMachine.add('FEEDBACK', Feedback(),
-                                   transitions={'goodbye':'GOODBYE',
-                                                'survey':'SURVEY'},
-                                   remapping={'status':'sm_status',
-                                              'kb_args':'sm_kb_args',
-                                              'task':'sm_task',
+                                   transitions={'survey':'SURVEY'},
+                                   remapping={'task':'sm_task',
                                               'interaction':'sm_interaction'})
 
             smach.StateMachine.add('SURVEY', Survey(),
                                    transitions={'predprocess':'PREDPROCESS'},
-                                   remapping={'status':'sm_status',
-                                              'kb_args':'sm_kb_args',
-                                              'task':'sm_task',
+                                   remapping={'task':'sm_task',
                                               'interaction':'sm_interaction'})
 
             smach.StateMachine.add('GOODBYE', Goodbye(),
-                                   transitions={'terminate':'outcome_termination'},
-                                   remapping={'kb_args':'sm_kb_args',
-                                              'status':'sm_status'})
+                                   transitions={'terminate':'outcome_termination'})
 
             smach.StateMachine.add('E_DETECT', EmotionDetection(),
                                    transitions={'quadrant_1':'QUADRANT_1',
@@ -1093,8 +970,7 @@ def main():
             for i in states :
                 smach.StateMachine.add(i, states[i],
                                     transitions={'predprocess':'PREDPROCESS'},
-                                    remapping={'kb_args':'sm_kb_args',
-                                               'dimension_mean':'sm_dimension_mean'})
+                                    remapping={'dimension_mean':'sm_dimension_mean'})
 
         lm.write('State machine is executed')
         outcome = sm.execute()
@@ -1105,7 +981,7 @@ def main():
         lm.write(e.message)
 
     finally:
-        sis.stop()
+        #sis.stop()
         
         lm_flow.printTable()
         lm.close()

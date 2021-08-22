@@ -11,12 +11,15 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 import os
+from datetime import datetime
 
 # changing directory to the file's directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # creating/connecting the main log file
-lm = LogManager(str(rospy.get_param('logger')))
+lm = LogManager('main')
+
+saveFrames = rospy.get_param('save_frames')
 
 # getting the values from the config file. they can be modified.
 with open('./config.txt', 'r') as f:
@@ -28,6 +31,16 @@ with open('./config.txt', 'r') as f:
     PEPPER_CAMERA_RESOLUTION = int(fLines[6].split('=')[1].strip())
     PEPPER_CAMERA_COLORSPACE = int(fLines[7].split('=')[1].strip())
     PEPPER_CAMERA_FPS = int(fLines[8].split('=')[1].strip())
+
+if saveFrames:
+    # changing directory to the log files' directory to save frames
+    os.chdir(lm.getFileDir())
+
+    # creating frames folder if not
+    if not os.path.isdir('frames'):
+        os.mkdir('frames')
+
+    frameDir = os.path.join(os.getcwd(), 'frames')
 
 # creating bridge to convert images to ROS publishable format
 bridge = CvBridge()
@@ -84,7 +97,7 @@ def main():
     while not rospy.is_shutdown():
 
         # gets image
-        result = videoDevice.getImageRemote(captureDevice);
+        result = videoDevice.getImageRemote(captureDevice)
 
         if result == None:
             lm.write('WARNING: Camera cannot capture frames!')
@@ -103,6 +116,14 @@ def main():
                     image.itemset((y, x, 1), values[i + 1])
                     image.itemset((y, x, 2), values[i + 2])
                     i += 3
+
+            if saveFrames and str(rospy.get_param('current_state')) != "NONE":
+                # creating the frame folder for current interaction state, if not exists
+                if str(rospy.get_param('current_state')) not in os.listdir(frameDir):
+                    os.mkdir(os.path.join(frameDir, str(rospy.get_param('current_state'))))
+
+                # saving frames to the specified folder for later analysis
+                cv2.imwrite(os.path.join(frameDir, str(rospy.get_param('current_state')), 'frame_' + str(datetime.now()).replace(' ', '::') + '.jpg'), image)
 
             try:
                 # converting image to publishable format

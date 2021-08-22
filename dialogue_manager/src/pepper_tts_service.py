@@ -13,7 +13,7 @@ import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # creating/connecting the main log file
-lm = LogManager(str(rospy.get_param('logger')))
+lm = LogManager('main')
 
 # getting the values from the config file. they can be modified.
 with open('./config.txt', 'r') as f:

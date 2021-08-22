@@ -4,47 +4,87 @@ from datetime import datetime
 import prettytable
 import textwrap
 
+import rospy
+
 class LogManager():
-    def __init__(self, name, path=None):
-        self.sessionName = name
-        self.fileName = name + '_' + str(datetime.now()).replace(' ', '::') + '.log'
+    def __init__(self, fileName):
+        # gets session name from rosparam
+        self.sessionName = str(rospy.get_param('session'))
 
-        # if a path is specified, it changes directory
-        if path:
-            os.chdir(path)
+        # sets log file name
+        self.fileName = fileName + '.log'
+
+        # changing directory to the file's current directory
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+        # sets the path of the directory that holds session folders
+        self.logDir = os.path.join(os.getcwd(), 'SessionReports')
+
+        # gets file path
+        self.file = self.setFileDir()
+
+        # if the file is being created instead of connecting an existing open file, it initializes some information
+        if self.fileName not in os.listdir(self.fileDir):
+            print os.listdir(self.fileDir)
+            self.initialize()
+
+    def setFileDir(self):
+        # creates main folder if not exists
+        if not os.path.isdir('SessionReports'):
+            os.mkdir('SessionReports')
+
+        # if the session folder is set, use it
+        if str(rospy.get_param('session_folder')) != 'NONE':
+            self.fileDir = str(rospy.get_param('session_folder'))
+            self.file = os.path.join(self.fileDir, self.fileName)
+            return self.file
+
+        # if there are more than 1 sessions that have same name, this number will declare the order of the session in the folder name (e.g.: Experiment(4))
+        fileNumber = 0
+
+        for f in os.listdir(self.logDir):
+            # name of the folder without timestamp
+            rootName = '_'.join(f.split('_')[:-1])
+
+            # if folder has a fileNumber
+            if rootName[-3] == '(' and rootName[-1] == ')' and rootName[-2].isdigit():
+
+                if rootName[:-3] == self.sessionName:
+                    fileNumber = max(fileNumber, int(rootName[-2]) + 1)
+
+                rootName = rootName[:-3]
+
+            if rootName == self.sessionName:
+
+                # if the session is not closed, use it
+                if not f.endswith('[CLOSED]'):
+                    self.fileDir = os.path.join(self.logDir, f)
+                    rospy.set_param('session_folder', self.fileDir)
+
+                    self.file = os.path.join(self.fileDir, self.fileName)
+
+                    return self.file
+
+                # if the session is closed, and the fileNumber is 0.
+                elif f.endswith('[CLOSED]') and fileNumber == 0:
+                    fileNumber = 1
+
+        # create sesison directory path
+        if fileNumber:
+            self.fileDir = os.path.join(self.logDir, self.sessionName + '(' + str(fileNumber) + ')_' + str(datetime.now()).replace(' ', '::'))
         else:
-            os.chdir(os.path.dirname(os.path.abspath(__file__)))
+            self.fileDir = os.path.join(self.logDir, self.sessionName + '_' + str(datetime.now()).replace(' ', '::'))
 
-        self.fileDir = os.path.join(os.getcwd(), 'logs')
+        # create the session directory
+        os.mkdir(self.fileDir)
 
-        # checking whether the file is already created or not
-        self.checkExistence()
+        # change rosparam to the path of the session
+        rospy.set_param('session_folder', self.fileDir)
 
-    def checkExistence(self):
-        if not os.path.isdir('logs'):
-            os.mkdir('logs')
-
-        # searches files to check whether the file exists or not
-        for f in os.listdir(self.fileDir):
-
-            # if there are a file that has a name starting with the specified file name
-            # it splits beacuse there can be multiple files for a session (e.g.: 'exp1_...', 'exp1_frames_...', 'exp1_flow...', etc.)
-            if '_'.join(f.split('_')[:-1]) == self.sessionName:
-                with open(os.path.join(self.fileDir, f), 'r') as control:
-
-                    # if the file is already created and closed
-                    if 'FILE CLOSED' in control.readlines()[-1]:
-                        raise IOError('It is a closed file that used for another experiment! Try with a different name.')
-                    
-                    # if the file is already created and still open
-                    else:
-                        self.file = os.path.join(self.fileDir, f)
-                        return
-
+        # change file path
         self.file = os.path.join(self.fileDir, self.fileName)
 
-        # writing initial values to file
-        self.initialize()
+        return self.file
 
     def close(self):
         '''
@@ -53,10 +93,19 @@ class LogManager():
 
         self.separate(3)
 
-        with open(self.file, 'a') as f:
+        # declares that the log file is closed by adding this line to the end of the log file.
+        self.write('FILE CLOSED')
 
-            # writing this to declare that this file is closed and prevents rewriting later
-            f.write('FILE CLOSED')
+        # write '[CLOSED]' at the end of the session folder's name, if not
+        try:
+            if not self.fileDir.endswith('[CLOSED]'):
+                os.rename(self.fileDir, self.fileDir + '[CLOSED]')
+        except:
+            pass
+
+        # change session path to new one
+        self.fileDir = self.fileDir + '[CLOSED]'
+        self.file = os.path.join(self.fileDir, self.fileName)
 
     def write(self, text, dateTime=True, printText=True):
         '''
@@ -88,8 +137,16 @@ class LogManager():
                 text = str(datetime.now()).replace(' ', '_') + ' - ' + text
 
         # writes the text to file
-        with open(self.file, 'a') as f:
-            f.write(text + '\n')
+        try:
+            with open(self.file, 'a') as f:
+                f.write(text + '\n')
+        except:
+            try:
+                with open(os.path.join(self.fileDir + '[CLOSED]', self.fileName), 'a') as f:
+                    f.write(text + '\n')
+            
+            except:
+                pass
 
         # prints the text to terminal
         if printText:
@@ -104,9 +161,8 @@ class LogManager():
         count: Number of separate lines
         '''
 
-        with open(self.file, 'a') as f:
-            for i in range(count):
-                f.write('-'*50 + '\n')
+        for i in range(count):
+            self.write('-'*50, False, False)
 
     def initialize(self):
         '''
@@ -121,7 +177,7 @@ class LogManager():
         self.write('Working directory: ' + os.getcwd())
 
         # writing the log files' directory
-        self.write('Log directory: ' + self.fileDir)
+        self.write('Log directory: ' + self.logDir)
         self.separate()
 
     def createTable(self, cols, dateTime=True):
@@ -236,9 +292,9 @@ class LogManager():
         except:
             return False
 
-    def getTimeIntervalLines(self, start, stop, dateTime=True):
+    def getTimeIntervalLines(self, start, stop, dateTime=True, lines=False):
         '''
-        Return the lines between the specified datetime interval. Returns 'False' if the time interval is invalid.
+        Returns the lines between the specified datetime interval. Returns 'False' if the time interval is invalid.
 
         PARAMETERS:
         -----------
@@ -251,10 +307,11 @@ class LogManager():
         interval = []
 
         try:
-            with open(self.file, 'r') as f:
-                lines = f.readlines()
+            if not lines:
+                with open(self.file, 'r') as f:
+                    lines = f.readlines()
 
-            lines = list(map(lambda x: x[:-1], lines))
+                lines = list(map(lambda x: x[:-1], lines))
 
             for line in lines:
                 try:
@@ -283,18 +340,9 @@ class LogManager():
         except:
             return False
 
+    def getFileDir(self):
+        '''
+        Returns the session directory
+        '''
         
-
-    def getLogPath(self):
-        '''
-        Returns the log file's path
-        '''
-
-        return os.path.joint(self.fileDir, self.fileName)
-
-    def getLogDir(self):
-        '''
-        Returns the log file's directory
-        '''
-
         return self.fileDir

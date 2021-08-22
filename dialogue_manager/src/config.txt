@@ -9,6 +9,7 @@ PEPPER_CAMERA_COLORSPACE = 13
 PEPPER_CAMERA_FPS = 30
 MICROPHONE_NAME = Jabra Speak 710: USB Audio (hw:2,0)
 PEPPER_SPEAK_SPEED = 100
+EXPERIMENTER_NAME = Nikhil
 
 #for pepper camera parameters, see: http://doc.aldebaran.com/2-0/family/juliette_technical/video_juliette.html
 #the lines' order cannot be changed!

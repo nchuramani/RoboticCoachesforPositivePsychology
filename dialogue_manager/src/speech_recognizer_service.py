@@ -19,11 +19,12 @@ with open('./config.txt', 'r') as f:
     MICROPHONE_NAME = fLines[9].split('=')[1].strip()
 
 # creating/connecting the main log file
-lm = LogManager(str(rospy.get_param('logger')))
+lm = LogManager('main')
 
 # creating speech recognition recognizer
 recognizer = sr.Recognizer()
 print(sr.Microphone.list_microphone_names())
+
 # sets microphone
 micIndex = sr.Microphone.list_microphone_names().index(MICROPHONE_NAME)
 mic = sr.Microphone(device_index=micIndex)
