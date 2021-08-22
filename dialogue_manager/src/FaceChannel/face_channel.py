@@ -7,7 +7,6 @@ import tensorflow as tf
 import rospy
 
 from sensor_msgs.msg import Image
-from dialogue_manager.msg import Emotion
 
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -17,6 +16,8 @@ import keras.backend.tensorflow_backend as tb
 
 import os
 import sys
+
+from datetime import datetime
 
 # adding parent directory of the file to the system to import log manager
 parentDir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -28,19 +29,16 @@ from log_manager import LogManager
 os.chdir(os.path.dirname(__file__))
 
 # creating/connecting the main log file
-lm = LogManager(str(rospy.get_param('logger')))
+lm = LogManager('main')
 
 # creating log file to keep the frames' dimensional outputs
-lm_frame = LogManager(str(rospy.get_param('logger')) + '_frames')
-lm_frame.write('ORDER: [Arousal, Valence]')
+lm_arousal_valence = LogManager('arousal_valence')
+lm_arousal_valence.write('ORDER: [Arousal, Valence]')
+lm_arousal_valence.separate(2)
 
 # initializing the ROS node
 rospy.init_node('face_channel', anonymous=True)
 lm.write('face_channel.py node initialized.')
-
-# creating publisher to publish frames' dimensional outpus
-category_pub = rospy.Publisher('emotion_channel', Emotion, queue_size=10)
-lm.write('Face Channel publisher is ready - [emotion_channel] topic')
 
 # creating bridge to convert ROS image messages to processable frames
 bridge = CvBridge()
@@ -94,15 +92,17 @@ def callback(data):
             
             # obtain dimensional classification
             dimensionalRecognition = numpy.array(modelDimensional.classify(face))
-            lm_frame.write(str(dimensionalRecognition).replace('\n', ''), printText=False)
+            lm_arousal_valence.write(str(dimensionalRecognition).replace('\n', ''), printText=False)
 
-            # creating ROS message
-            msg = [dimensionalRecognition[0],
-                   dimensionalRecognition[1]]
+            # creates message to save the list
+            text = str(datetime.now()).replace(' ', '_') + ' - ' + str(dimensionalRecognition).replace('\n', '')
 
-            # publishing ROS message
-            category_pub.publish(msg)
+            # adds value to the list that is held in a rosparam called 'arousal_valence'
+            if rospy.get_param('arousal_valence') != 'NONE':
+                rospy.set_param('arousal_valence', rospy.get_param('arousal_valence') + [text])
 
+            else:
+                rospy.set_param('arousal_valence', [text])
 
 def listener():
     rospy.Subscriber('camera_channel', Image, callback)
@@ -112,4 +112,4 @@ def listener():
 
 if __name__ == '__main__':
     listener()
-    lm_frame.close()
+    lm_arousal_valence.close()
