@@ -59,17 +59,19 @@ url: https://doi.ieeecomputersociety.org/10.1109/FG47880.2020.00070
 
 ## Script
 
-The script that contains dialogue scenario and is implemented to the demo state machine can be found in *SCRIPT.pdf* file.
+The script that contains dialogue scenario and is implemented to the demo state machine can be found in *SCRIPT.pdf* file. During the development of the script, various psychologists helped the process.
+
+<br>
 
 ## Smach
 
 Project utilizes a Python library named **Smach**. This allows us to develop a state machine structure to implement the script easily. Below is the structure of the demo state machine:
 
-<br>
-
 ![State Machine](dialogue_manager/img/Smach.png)
 
 A custom state machine can be created and used for different purposes.
+
+<br>
 
 ## Requirements
 
@@ -77,9 +79,13 @@ Essentials:
 
 * Install all the libraries in the requirements.txt file.
 
-* Install **ROS (Robot Operating System)** (*ROS Melodic* with *Ubuntu 18.04* preferably)
+* Install **ROS (Robot Operating System)**
+  
+  >*ROS Melodic* with *Ubuntu 18.04* preferably
 
-* Install **NAOqi** Python SDK (*NAOqi 2.5.7* preferably) ([Download link](https://developer.softbankrobotics.com/pepper-naoqi-25-downloads-linux))
+* Install **NAOqi** Python SDK ([Download link](https://developer.softbankrobotics.com/pepper-naoqi-25-downloads-linux))
+
+  >*NAOqi 2.5.7* preferably
 
 To use Choregraph simulation:
 
@@ -124,6 +130,8 @@ import speech_recognition as sr
 print sr.Microphone.list_microphone_names()
 ```
 
+<br>
+
 ### Launch files
 
 There are two launch files in the project:
@@ -147,6 +155,8 @@ Launch files' arguments:
 * *save_frames* determines whether the camera output frames will be saved or not. If the given value is **1**, it saves all the frames in the session folder. Default is 0.
 
 The log files and frames can be found in the session folder that is located in *dialogue_manager/src/SessionReports*. The folder will be created after first run.
+
+<br>
 
 ### Log Files
 
