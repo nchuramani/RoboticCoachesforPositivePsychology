@@ -1,9 +1,16 @@
 <launch>
-	<arg name="logger" default="Experiment"/>
+	<arg name="session" default="Experiment"/>
 	<arg name="name" default="User"/>
+	<arg name="save_frames" default="0"/>
 
-	<param name="logger" value="$(arg logger)"/>
+	<param name="session" value="$(arg session)"/>
 	<param name="name" value="$(arg name)"/>
+	<param name="save_frames" value="$(arg save_frames)"/>
+
+	<param name="current_state" value="NONE"/>
+	<param name="arousal_valence" value="NONE"/>
+
+	<param name="session_folder" value="NONE"/>
 
 	<node name="pepper_tts_service" pkg="dialogue_manager" type="pepper_tts_service.py" output="screen"/>
 	<node name="speech_recognizer_service" pkg="dialogue_manager" type="speech_recognizer_service.py" output="screen"/>
