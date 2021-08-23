@@ -12,7 +12,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 import keras.backend.tensorflow_backend as tb
 
-#import cv2
+import cv2
 
 import os
 import sys
@@ -30,6 +30,23 @@ os.chdir(os.path.dirname(__file__))
 
 # creating/connecting the main log file
 lm = LogManager('main')
+
+saveFrames = rospy.get_param('save_frames')
+
+if saveFrames:
+    # changing directory to the log files' directory to save frames
+    os.chdir(lm.getFileDir())
+
+    # creating frames folder if not
+    if not os.path.isdir('frames'):
+        os.mkdir('frames')
+
+     # creating frames folder if not
+    if not os.path.isdir('faces'):
+        os.mkdir('faces')
+
+    frameDir = os.path.join(os.getcwd(), 'frames')
+    faceDir = os.path.join(os.getcwd(), 'faces')
 
 # creating log file to keep the frames' dimensional outputs
 lm_arousal_valence = LogManager('arousal_valence')
@@ -78,8 +95,9 @@ def callback(data):
         # detects faces
         facePoints, face = imageProcessing.detectFace(frame)
 
+        # uncomment below to see the frames during the experiment
         '''
-        cv2.imshow('pepper', frame)
+        cv2.imshow('frames', frame)
 
         if cv2.waitKey(33) == 27:
             return
@@ -88,11 +106,24 @@ def callback(data):
          # if a face is detected
         if not len(face) == 0:
             # pre-process the face
-            face = imageProcessing.preProcess(face, faceSize)
+            processedFace = imageProcessing.preProcess(face, faceSize)
             
             # obtain dimensional classification
-            dimensionalRecognition = numpy.array(modelDimensional.classify(face))
+            dimensionalRecognition = numpy.array(modelDimensional.classify(processedFace))
             lm_arousal_valence.write(str(dimensionalRecognition).replace('\n', ''), printText=False)
+
+            
+            if saveFrames and str(rospy.get_param('current_state')) != "NONE":
+                # creating the frame folder for current interaction state, if not exists
+                if str(rospy.get_param('current_state')) not in os.listdir(frameDir):
+                    os.mkdir(os.path.join(frameDir, str(rospy.get_param('current_state'))))
+                    os.mkdir(os.path.join(faceDir, str(rospy.get_param('current_state'))))
+
+                # saving frames to the specified folder for later analysis
+                cv2.imwrite(os.path.join(frameDir, str(rospy.get_param('current_state')), 'frame_' + str(datetime.now()).replace(' ', '::') + '.jpg'), frame)
+
+                # saving face frames to the specified folder for later analysis
+                cv2.imwrite(os.path.join(faceDir, str(rospy.get_param('current_state')), 'face_frame_' + str(datetime.now()).replace(' ', '::') + '.jpg'), face)
 
             # creates message to save the list
             text = str(datetime.now()).replace(' ', '_') + ' - ' + str(dimensionalRecognition).replace('\n', '')
