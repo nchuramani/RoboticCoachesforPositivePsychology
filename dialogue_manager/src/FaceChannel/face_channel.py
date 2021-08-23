@@ -57,6 +57,10 @@ lm_arousal_valence.separate(2)
 rospy.init_node('face_channel', anonymous=True)
 lm.write('face_channel.py node initialized.')
 
+# creating publisher to publish face frames
+face_frame_pub = rospy.Publisher('face_frames_channel', Image, queue_size=10)
+lm.write('Face frames publisher is ready - [face_frames_channel] topic')
+
 # creating bridge to convert ROS image messages to processable frames
 bridge = CvBridge()
 
@@ -89,8 +93,8 @@ def callback(data):
 
         try:
             frame = bridge.imgmsg_to_cv2(data)
-        except CvBridgeError as err:
-            rospy.loginfo(err)
+        except CvBridgeError as e:
+            lm.write(e.message)
         
         # detects faces
         facePoints, face = imageProcessing.detectFace(frame)
@@ -114,6 +118,17 @@ def callback(data):
 
             face = cv2.resize(face, (96, 96), interpolation = cv2.INTER_AREA)
             
+            try:
+                # converting image to publishable format
+                img_msg = bridge.cv2_to_imgmsg(face)
+
+                # publishes image data
+                face_frame_pub.publish(img_msg)
+        
+            except CvBridgeError as e:
+                lm.write(e.message)
+
+
             if saveFrames and str(rospy.get_param('current_state')) != "NONE":
                 # creating the frame folder for current interaction state, if not exists
                 if str(rospy.get_param('current_state')) not in os.listdir(frameDir):
