@@ -53,7 +53,7 @@ dialogue = {"general":  ["I couldn't understand what you said. Can you please re
             "introduction": ["Hi", #Wave
                             "My name is Pepper.",
                             "Nice to meet you!",
-                            "We're going to do positive psychology practices today. I'll explain what that means in a Minute. Are you okay with that? Please say 'yes' or 'no'.",
+                            "We're going to do positive psychology practices today. I'll explain what that means in a minute. Are you okay with that? Please say 'yes' or 'no'.",
                             "Okay. Positive psychology practices aim to guide the participant to focus on the positive things in their life. Often, the negative things in our life get much of our attention, while the positive things are harder to focus on.",
                             "First, we will focus on your past, then talk about your present, and then look at the future. With this, we aim to help you think optimistically about your future.",
                             "We will do each exercise three times focussing on these time periods. With this, we aim to help you reflect on all three time periods in your life, and cast our attention towards the future. First, we will talk about impactful events in your life. Next, we will do a gratitude building exercise, and then an exercise focusing on your accomplishments. You can go into as much or as little detail as you'd like.",

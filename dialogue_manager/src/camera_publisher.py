@@ -16,18 +16,6 @@ from datetime import datetime
 # creating/connecting the main log file
 lm = LogManager('main')
 
-saveFrames = rospy.get_param('save_frames')
-
-if saveFrames:
-    # changing directory to the log files' directory to save frames
-    os.chdir(lm.getFileDir())
-
-    # creating frames folder if not
-    if not os.path.isdir('frames'):
-        os.mkdir('frames')
-
-    frameDir = os.path.join(os.getcwd(), 'frames')
-
 # creating bridge to convert images to ROS publishable format
 bridge = CvBridge()
 
@@ -61,14 +49,6 @@ def main():
         if not rval:
             lm.write('WARNING: Could not grab camera frame!')
             break
-
-        if saveFrames and str(rospy.get_param('current_state')) != "NONE":
-            # creating the frame folder for current interaction state, if not exists
-            if str(rospy.get_param('current_state')) not in os.listdir(frameDir):
-                os.mkdir(os.path.join(frameDir, str(rospy.get_param('current_state'))))
-
-            # saving frames to the specified folder for later analysis
-            cv2.imwrite(os.path.join(frameDir, str(rospy.get_param('current_state')), 'frame_' + str(datetime.now()).replace(' ', '::') + '.jpg'), frame)
 
         try:
             # converting image to publishable format

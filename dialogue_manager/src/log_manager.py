@@ -6,10 +6,12 @@ import textwrap
 
 import rospy
 
+import csv
+
 class LogManager():
     def __init__(self, fileName):
         # gets session name from rosparam
-        self.sessionName = str(rospy.get_param('session'))
+        self.sessionName = str(rospy.get_param('session')) + '_' + str(rospy.get_param('name'))
 
         # sets log file name
         self.fileName = fileName + '.log'
@@ -39,20 +41,9 @@ class LogManager():
             self.file = os.path.join(self.fileDir, self.fileName)
             return self.file
 
-        # if there are more than 1 sessions that have same name, this number will declare the order of the session in the folder name (e.g.: Experiment(4))
-        fileNumber = 0
-
         for f in os.listdir(self.logDir):
             # name of the folder without timestamp
             rootName = '_'.join(f.split('_')[:-1])
-
-            # if folder has a fileNumber
-            if rootName[-3] == '(' and rootName[-1] == ')' and rootName[-2].isdigit():
-
-                if rootName[:-3] == self.sessionName:
-                    fileNumber = max(fileNumber, int(rootName[-2]) + 1)
-
-                rootName = rootName[:-3]
 
             if rootName == self.sessionName:
 
@@ -65,15 +56,8 @@ class LogManager():
 
                     return self.file
 
-                # if the session is closed, and the fileNumber is 0.
-                elif f.endswith('[CLOSED]') and fileNumber == 0:
-                    fileNumber = 1
-
-        # create sesison directory path
-        if fileNumber:
-            self.fileDir = os.path.join(self.logDir, self.sessionName + '(' + str(fileNumber) + ')_' + str(datetime.now()).replace(' ', '::'))
-        else:
-            self.fileDir = os.path.join(self.logDir, self.sessionName + '_' + str(datetime.now()).replace(' ', '::'))
+        # create session directory path
+        self.fileDir = os.path.join(self.logDir, self.sessionName + '_' + str(datetime.now()).replace(' ', '::'))
 
         # create the session directory
         os.mkdir(self.fileDir)
@@ -239,7 +223,7 @@ class LogManager():
         '''
 
         self.separate()
-        self.write('STATE TRANSITIONS', False)
+        self.write('STATE TRANSITIONS', False, False)
         self.separate(1)
         
         try:
