@@ -112,6 +112,7 @@ def callback(data):
             dimensionalRecognition = numpy.array(modelDimensional.classify(processedFace))
             lm_arousal_valence.write(str(dimensionalRecognition).replace('\n', ''), printText=False)
 
+            face = cv2.resize(face, (96, 96), interpolation = cv2.INTER_AREA)
             
             if saveFrames and str(rospy.get_param('current_state')) != "NONE":
                 # creating the frame folder for current interaction state, if not exists
