@@ -148,12 +148,13 @@ dialogue = {"general":  ["I couldn't understand what you said. Can you please re
                                             " Now, let's think about what accomplishments you would like to make in the future. These can be anything, big or small.",
                                             " These can be small accomplishments, for example, cooking a tasty meal or reading a good book. You might want to consider something which you've been meaning to do for a while or something that might make a positive contribution to you or your life.", 
                                             [" How do you think you will be able to accomplish that?",
-                                            " What personal strengths If you achieve this, what difference will it make to you?and qualities do you think you will use to accomplish that?",
+                                            " What personal strengths and qualities do you think you will use to accomplish that?",
                                             " Which of your personal skills and qualities will help you accomplish that?",
                                             " How have you managed to achieve things before? How might you apply these to this new accomplishment?"],
                                             [" How will this accomplishment make you feel?",
                                             " How will this accomplishment affect your feelings in the future?",
                                             " If you achieve this, what difference will it make to you?"],
-                                            " Thank you for sharing this with me."]},
+                                            " Thank you for sharing this with me.",
+                                            " Could you tell me about another accomplishment you would like to make in the future?"]},
                                             
             "goodbye":  " Thank you for completing the sessions with me. I hope this was useful for you. The human researcher will now enter the room to ask you a few questions, before you leave."}

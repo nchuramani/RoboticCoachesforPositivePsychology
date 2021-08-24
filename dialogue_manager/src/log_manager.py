@@ -6,8 +6,6 @@ import textwrap
 
 import rospy
 
-import csv
-
 class LogManager():
     def __init__(self, fileName):
         # gets session name from rosparam
