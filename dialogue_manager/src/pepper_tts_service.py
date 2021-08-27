@@ -27,6 +27,7 @@ with open('./config.txt', 'r') as f:
 tts = ALProxy("ALTextToSpeech", PEPPER_IP, PEPPER_PORT)
 tts.setParameter("speed", PEPPER_SPEAK_SPEED)
 
+
 behavior = ALProxy('ALBehaviorManager', PEPPER_IP, PEPPER_PORT)
 
 def handle_text_to_speech(req):
@@ -34,16 +35,20 @@ def handle_text_to_speech(req):
 
     # makes the robot speak
     tts.say(req.inp)
-    
+
     # if no behavior is specified
     if req.behavior != '':
         # gets behavior path
-        behaviorPath = '.lastUploadedChoregrapheBehavior/' + req.behavior
-        
+        behaviorPath = '.lastUploadedChoregrapheBehavior/Behaviors/' + req.behavior
+
         # makes the robot perform the behavior
         behavior.runBehavior(behaviorPath)
         lm.write('Running Pepper behavior: ' + behaviorPath)
 
+    # Disable default Pepper functionality.
+    ALProxy('ALFaceDetection', PEPPER_IP, PEPPER_PORT).setRecognitionEnabled(False)
+    ALProxy('ALSpeechRecognition', PEPPER_IP, PEPPER_PORT).pause(True)
+    ALProxy('ALMotion', PEPPER_IP, PEPPER_PORT).setBreathEnabled('Body', False)
     #return a blank string because the output is not needed
     return tts_srvResponse('')
 

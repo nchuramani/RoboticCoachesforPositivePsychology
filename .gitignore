@@ -49,3 +49,7 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+# Checkpoint
+dialogue_manager/src/CLModel/checkpoint/
+

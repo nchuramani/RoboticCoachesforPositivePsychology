@@ -1,48 +1,49 @@
 #!/usr/bin/env python
 
 # a dictionary that keeps and the whole script under categories
-dialogue = {"general":  ["I couldn't understand what you said. Can you please repeat it?",
-                        "Please answer with the requested response."],
+
+dialogue = {"general":  [" I couldn't understand what you said. Can you please repeat it?",
+                        " Please answer with the requested response."],
 
             "yes/no":   [["yes", "yeah", "yep", "yeap", "okay", "fine", "true", "aye", "definitely", "certainly", "exactly", "affirmative", "gladly", "good", "nice", "of course", "positive", "precisely", "sure"],
                          ["no", "nope", "not", "nay", "never", "nae", "naw", "nah"]],
 
             "emotion": [#sad
-                        ["That sounds like a tough experience. I'm sorry.",
-                        "I'm sorry that happened to you."],
+                        [" That sounds like a tough experience. I'm sorry.",
+                        " I'm sorry that happened to you."],
                         #happy
-                        ["That sounds great, I'm happy for you.",
-                        "That's great, it sounds like a positive experience."],
+                        [" That sounds great, I'm happy for you.",
+                        " That's great, it sounds like a positive experience."],
                         #angry
-                        ["That sounds like a tough experience for you. I'm sorry you went through that.",
-                        "That sounds really frustrating."],
+                        [" That sounds like a tough experience for you. I'm sorry you went through that.",
+                        " That sounds really frustrating."],
                         #fear
-                        ["Wow, that sounds scary.",
-                        "That sounds scary."],
+                        [" Wow, that sounds scary.",
+                        " That sounds scary."],
                         #disgust
-                        "That sounds like a difficult experience for you.",
+                        " That sounds like a difficult experience for you.",
                         #surprise
-                        ["Wow, that sounds surprising.",
-                        "Wow, that must have come out of the blue."]],
+                        [" Wow, that sounds surprising.",
+                        " Wow, that must have come out of the blue."]],
 
-            "phrases": [["I'm so pleased.",
-                        "You deserve this.",
-                        "Well done.",
-                        "That sounds great."],
-                        ["It sounds like you worked hard.",
-                        "Well done.",
-                        "I'm so proud of you.",
-                        "I'm happy for you."],
-                        ["That sounds nice.",
-                        "That sounds pleasant.",
-                        "That's great."],
-                        ["It's great that you could notice this positive thing.",
-                        "Paying attention to the positive can help us feel better.",
-                        "I'm glad you were able to recognize the gratitude you felt."],
-                        "I hope you achieve this."],
+            "phrases": [[" I'm so pleased.",
+                        " You deserve this.",
+                        " Well done.",
+                        " That sounds great."],
+                        [" It sounds like you worked hard.",
+                        " Well done.",
+                        " I'm so proud of you.",
+                        " I'm happy for you."],
+                        [" That sounds nice.",
+                        " That sounds pleasant.",
+                        " That's great."],
+                        [" It's great that you could notice this positive thing.",
+                        " Paying attention to the positive can help us feel better.",
+                        " I'm glad you were able to recognize the gratitude you felt."],
+                        " I hope you achieve this."],
 
             "feedback": [" Thank you for completing the exercises regarding your {}!",
-                        " Now I will ask you to provide feedback about how you found this first session with me.",
+                        " Now I will ask you to provide feedback about how you found this session with me.",
                         " How did you find the exercises? Was it 'good', just 'okay', or was it 'bad'.",
                         # "Could you tell me what made the exercises 'good', just 'okay', or 'bad'?",
                         " Can you tell me what made the exercises feel that way?",
