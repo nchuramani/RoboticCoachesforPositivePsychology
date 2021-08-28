@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 def import_network(file_name, NetworkClass):
     """ Import pickled network from file
     """
-    file = open(file_name, 'br')
+    file = open(file_name, 'rb')
     data_pickle = file.read()
     file.close()
     net = NetworkClass()

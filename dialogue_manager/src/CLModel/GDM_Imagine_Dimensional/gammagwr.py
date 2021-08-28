@@ -1,8 +1,8 @@
 """
 gwr-tb :: Gamma-GWR based on Marsland et al. (2002)'s Grow-When-Required network
-@last-modified: 25 January 2019
 @author: German I. Parisi (german.parisi@gmail.com)
-
+@last-modified: 25 August 2021
+@author: Nikhil Churamani (nc528)
 """
 
 import numpy as np
@@ -10,8 +10,8 @@ import math
 from heapq import nsmallest
 from sklearn.metrics.pairwise import cosine_distances, paired_euclidean_distances
 from typing import Tuple, Union, Callable, Any
-
-class GammaGWR:
+__metaclass__ = type
+class GammaGWR(object):
 
     def __init__(self):
         self.iterations = 0
@@ -27,7 +27,7 @@ class GammaGWR:
         # return np.linalg.norm(np.dot(self.alphas.T, (x-y)))
         if type.startswith('euc'):
             # return np.linalg.norm(np.dot(self.alphas.T, (paired_euclidean_distances(x,y))))
-            return np.linalg.norm(x - y)
+            return np.linalg.norm(np.dot(self.alphas.T, x - y))
             # return np.linalg.norm(np.dot(self.alphas.T, (x-y)))
 
         else:
@@ -201,7 +201,7 @@ class GammaGWR:
                     rem_c += 1
                 else:
                     ind_c += 1
-            print ("(-- Removed %s neuron(s))" % rem_c)
+            #print("(-- Removed %s neuron(s))" % rem_c)
                 
     def train_ggwr(self, ds, epochs, a_threshold, beta, l_rates):
         
@@ -297,8 +297,8 @@ class GammaGWR:
             # Average quantization error (AQE)
             error_counter[epoch] /= self.samples
             
-            print ("(Epoch: %s, NN: %s, ATQE: %s)" %
-                   (epoch + 1, self.num_nodes, error_counter[epoch]))
+            #print("(Epoch: %s, NN: %s, ATQE: %s)" %
+                   # (epoch + 1, self.num_nodes, error_counter[epoch]))
             
         # Remove isolated neurons
         self.remove_isolated_nodes()

@@ -10,6 +10,8 @@ import numpy as np
 import math
 from .gammagwr import GammaGWR
 from .utils import concordance_correlation_coefficient
+
+__metaclass__ = type
 class EpisodicGWR(GammaGWR):
 
     def __init__(self):
@@ -72,7 +74,7 @@ class EpisodicGWR(GammaGWR):
     def update_temporal(self, current_ind, previous_ind, **kwargs):
         new_node = kwargs.get('new_node', False)
         if new_node:
-            self.temporal = super().expand_matrix(self.temporal)
+            self.temporal = super(EpisodicGWR, self).expand_matrix(self.temporal)
         if previous_ind != -1 and previous_ind != current_ind:
             self.temporal[previous_ind, current_ind] += 1
 
@@ -116,7 +118,7 @@ class EpisodicGWR(GammaGWR):
                 else: return
             else:
                 ind_c += 1
-        print ("(-- Removed %s neuron(s))" % rem_c)
+        #print("(-- Removed %s neuron(s))" % rem_c)
 
 
     def replay_samples(self, size):
@@ -179,7 +181,7 @@ class EpisodicGWR(GammaGWR):
                 
                 # Find the best and second-best matching neurons
 
-                bmus = super().find_bmus(self.g_context, s_best = True)
+                bmus = super(EpisodicGWR, self).find_bmus(self.g_context, s_best = True)
                 b_index = bmus[0][1]
                 s_index = bmus[1][1]
                 b_distance = bmus[0][0]
@@ -206,23 +208,23 @@ class EpisodicGWR(GammaGWR):
                         and self.num_nodes < self.max_nodes):
                         # Add new neuron
                         n_index = self.num_nodes
-                        super().add_node(b_index)
+                        super(EpisodicGWR, self).add_node(b_index)
                        
                         # Add label histogram           
                         self.update_labels(n_index, label, new_node=True)
     
                         # Update edges and ages
-                        super().update_edges(b_index, s_index, new_index=n_index)
+                        super(EpisodicGWR, self).update_edges(b_index, s_index, new_index=n_index)
                         
                         # Update temporal connections
                         self.update_temporal(n_index, previous_ind, new_node=True)
     
                         # Habituation counter                    
-                        super().habituate_node(n_index, self.tau_b, new_node=True)
+                        super(EpisodicGWR, self).habituate_node(n_index, self.tau_b, new_node=True)
                     
                     else:
                         # Habituate BMU
-                        super().habituate_node(b_index, self.tau_b)
+                        super(EpisodicGWR, self).habituate_node(b_index, self.tau_b)
     
                         # Update BMU's weight vector
                         b_rate, n_rate = self.epsilon_b, self.epsilon_n
@@ -234,30 +236,30 @@ class EpisodicGWR(GammaGWR):
                             self.update_labels(b_index, label)
 
                         # if imagined:
-                        super().update_weight(b_index, b_rate, a)
+                        super(EpisodicGWR, self).update_weight(b_index, b_rate, a)
                         # else:
-                        #     super().update_weight(b_index, b_rate)
+                        #     super(EpisodicGWR, self).update_weight(b_index, b_rate)
     
                         # Update BMU's edges // Remove BMU's oldest ones
-                        super().update_edges(b_index, s_index)
+                        super(EpisodicGWR, self).update_edges(b_index, s_index)
     
                         # Update temporal connections
                         self.update_temporal(b_index, previous_ind)
     
                         # Update BMU's neighbors
-                        super().update_neighbors(b_index, n_rate)
+                        super(EpisodicGWR, self).update_neighbors(b_index, n_rate)
                         
                 self.iterations += 1
                     
                 previous_ind = b_index
 
             # Remove old edges
-            super().remove_old_edges()
+            super(EpisodicGWR, self).remove_old_edges()
             
             # Average quantization error (AQE)
             error_counter[epoch] /= self.samples
             
-            print ("(Epoch: %s, NN: %s, ATQE: %s)" % (epoch + 1, self.num_nodes, error_counter[epoch]))
+            #print("(Epoch: %s, NN: %s, ATQE: %s)" % (epoch + 1, self.num_nodes, error_counter[epoch]))
             
         # Remove isolated neurons
         self.remove_isolated_nodes()
@@ -279,7 +281,7 @@ class EpisodicGWR(GammaGWR):
     #     for i in range(0, test_samples):
     #         input_context[0] = ds_vectors[i]
     #         # Find the BMU
-    #         b_index, b_distance = super().find_bmus(input_context)
+    #         b_index, b_distance = super(EpisodicGWR, self).find_bmus(input_context)
     #         self.bmus_index[i] = b_index
     #         self.bmus_weight[i] = self.weights[b_index][0]
     #         self.bmus_activation[i] = math.exp(-b_distance)
@@ -321,7 +323,7 @@ class EpisodicGWR(GammaGWR):
     #     for i in range(0, test_samples):
     #         input_context[0] = ds_vectors[i]
     #         # Find the BMU
-    #         b_index, b_distance = super().find_bmus(input_context)
+    #         b_index, b_distance = super(EpisodicGWR, self).find_bmus(input_context)
     #         self.bmus_index[i] = b_index
     #         self.bmus_weight[i] = self.weights[b_index][0]
     #         self.bmus_activation[i] = math.exp(-b_distance)
@@ -359,7 +361,7 @@ class EpisodicGWR(GammaGWR):
         for i in range(0, ds_vectors.shape[0]):
             input_context[0] = ds_vectors[i]
             # Find the BMU
-            b_index, _ = super().find_bmus(input_context)
+            b_index, _ = super(EpisodicGWR, self).find_bmus(input_context)
             self.bmus_index[i] = b_index
             self.bmus_weight[i] = self.weights[b_index][0]
             for j in range(1, self.depth):
@@ -368,9 +370,9 @@ class EpisodicGWR(GammaGWR):
             valences.append(self.alabelsValence[b_index])
             arousals.append(self.alabelsArousal[b_index])
 
-        valence = min(1, max(-1, np.mean(valences)))
-        arousal =  min(1, max(-1, np.mean(arousals)))
-        return [arousal, valence]
+        valences = [min(1, max(-1, valences[i])) for i in range(len(valences))]
+        arousals = [min(1, max(-1, arousals[i])) for i in range(len(arousals))]
+        return arousals, valences
 
     def test_av(self, ds_vectors, ds_labels, test_accuracy=False):
         test_samples = ds_vectors.shape[0]
@@ -382,7 +384,7 @@ class EpisodicGWR(GammaGWR):
         for i in range(0, ds_vectors.shape[0]):
             input_context[0] = ds_vectors[i]
             # Find the BMU
-            b_index, b_distance = super().find_bmus(input_context)
+            b_index, b_distance = super(EpisodicGWR, self).find_bmus(input_context)
             self.bmus_index[i] = b_index
             self.bmus_weight[i] = self.weights[b_index][0]
             for j in range(1, self.depth):

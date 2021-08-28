@@ -364,8 +364,8 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
                 r_labels[i, 1, r] = net.alabelsArousal[int(samples[r])]
         return r_weights, r_labels
 
-    print("Replay: " + str(train_replay))
-    print("Imagination: " + str(train_imagine))
+    # lm.write("Replay: " + str(train_replay))
+    # lm.write("Imagination: " + str(train_imagine))
 
     '''
     Episodic-GWR supports multi-class neurons.
@@ -415,11 +415,11 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
     """ Incremental training hyper-parameters """
 
     # Epochs per sample for incremental learning
-    epochs = 6
+    epochs = 5
     # Initialising experienced episodes to Zero.
     n_episodes = 0
     # Number of samples per epoch
-    batch_size = 5
+    batch_size = 10
 
     # Replay parameters; With num_context = 0, RNATs size set to 1, that is, only looking at previous BMU.
     # Size of RNATs
@@ -431,15 +431,15 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
     """ ##################################  Logging Parameters  #####################################"""
     """##############################################################################################"""
 
-    print("GDM Parameters LOG")
-    print("Number of Epochs: " + str(epochs))
-    print("Number of Contexts: " + str(num_context))
-    print("Activation Thresholds: [" + str(a_threshold[0]) + ", " + str(a_threshold[1]) + "]")
-    print("Habituation Thresholds: [" + str(h_thresholds[0]) + ", " + str(h_thresholds[1]) + "]")
-    print("Episodic lr: [" + str(e_learning_rates[0]) + ", " + str(e_learning_rates[1]) + "]")
-    print("Semantic lr: [" + str(s_learning_rates[0]) + ", " + str(s_learning_rates[1]) + "]")
-    print("Batch Size: " + str(batch_size))
-    print("GDM Parameters LOG")
+    # lm.write("GDM Parameters LOG")
+    # lm.write("Number of Epochs: " + str(epochs))
+    # lm.write("Number of Contexts: " + str(num_context))
+    # lm.write("Activation Thresholds: [" + str(a_threshold[0]) + ", " + str(a_threshold[1]) + "]")
+    # lm.write("Habituation Thresholds: [" + str(h_thresholds[0]) + ", " + str(h_thresholds[1]) + "]")
+    # lm.write("Episodic lr: [" + str(e_learning_rates[0]) + ", " + str(e_learning_rates[1]) + "]")
+    # lm.write("Semantic lr: [" + str(s_learning_rates[0]) + ", " + str(s_learning_rates[1]) + "]")
+    # lm.write("Batch Size: " + str(batch_size))
+    # lm.write("GDM Parameters LOG")
 
 
     """##############################################################################################"""
@@ -447,14 +447,14 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
     """##############################################################################################"""
 
     for s in range(0, ds_vectors.shape[0], batch_size):
-        print("Training Episodic Regular")
+        # lm.write("Training Episodic Regular")
         g_episodic.train_egwr(ds_vectors[s:s + batch_size],
                               ds_labels[s:s + batch_size],
                               epochs, a_threshold[0], beta, e_learning_rates,
                               context, hab_threshold=h_thresholds[0], regulated=0)
         e_weights, ccc, e_labels = g_episodic.test_av(ds_vectors[s:s + batch_size], ds_labels[s:s + batch_size],
                                                          test_accuracy=True)
-        print("Training Semantic Regular")
+        # lm.write("Training Semantic Regular")
         g_semantic.train_egwr(e_weights, ds_labels[s:s + batch_size],
                               epochs, a_threshold[1], beta, s_learning_rates,
                               context=False, hab_threshold=h_thresholds[1], regulated=1)
@@ -462,12 +462,12 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
         # Running Pseudo-Replay  #######################################"""
         if n_episodes > 0:
             # Replay pseudo-samples
-            print("Training Episodic Replay")
+            # lm.write("Training Episodic Replay")
             # Episodic Pseudo-Replay
             g_episodic.train_egwr(replay_weights, replay_labels,
                                   epochs//3, a_threshold[0], beta,
                                   e_learning_rates, context=False, hab_threshold=h_thresholds[0], regulated=0)
-            print("Training Semantic Replay")
+            # lm.write("Training Semantic Replay")
             # Semantic Pseudo-Replay
             g_semantic.train_egwr(replay_weights, replay_labels,
                                   epochs//3, a_threshold[1], beta,
@@ -491,12 +491,13 @@ def annotate_GDM(trained_GWRs, test_data):
     g_episodic, g_semantic = trained_GWRs
 
     # Annotations from Episodic
-    e_arousal, e_valence = g_episodic.annotate(test_data)
+    e_arousals, e_valences = g_episodic.annotate(test_data)
 
     # Annotations from Semantic
-    s_arousal, s_valence = g_semantic.annotate(test_data)
+    s_arousals, s_valences = g_semantic.annotate(test_data)
 
-    return [e_arousal, e_valence], [s_arousal, s_valence]
+    return numpy.array([e_arousals, e_valences]).reshape((len(e_arousals)), 2), \
+           numpy.array([s_arousals, s_valences]).reshape((len(e_arousals)), 2)
 
 
 
@@ -522,7 +523,7 @@ def callback(data):
             if len(os.listdir(gwrs_path)) > 0:
                 input_trained_GWRs = []
                 input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))
-                input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_s", NetworkClass=EpisodicGWR))
+                input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_S", NetworkClass=EpisodicGWR))
             else:
                 input_trained_GWRs = (None, None)
             # Training with Novel Data
@@ -538,7 +539,9 @@ def callback(data):
             # Annotate User Data
             encodings = generate_encodings(CAAE_LoadPath, faceDir, test=True)
             episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
-            lm_arousal_valence_cl.write(str(episodic_results).replace('\n', ''), printText=False)
+            for result in episodic_results:
+                lm_arousal_valence_cl.write(str(round(numpy.array(result).reshape((2, 1, 1))), 3).replace('\n', ''),
+                                            printText=False)
 
             # creates message to save the list
             text = str(datetime.now()).replace(' ', '_') + ' - ' + str(episodic_results).replace('\n', '')

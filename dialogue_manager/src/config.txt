@@ -9,7 +9,7 @@ PEPPER_CAMERA_COLORSPACE = 13
 PEPPER_CAMERA_FPS = 30
 MICROPHONE_NAME = HD Pro Webcam C920: USB Audio (hw:2,0)
 PEPPER_SPEAK_SPEED = 95
-EXPERIMENTER_NAME = Minja
+EXPERIMENTER_NAME = Minya
 
 #for pepper camera parameters, see: http://doc.aldebaran.com/2-0/family/juliette_technical/video_juliette.html
 #the lines' order cannot be changed!

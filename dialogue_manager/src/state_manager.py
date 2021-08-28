@@ -106,7 +106,7 @@ def speech_proxy(timeout='', dimensions=False, experimenterAnswer=False, conditi
             lm.write('[Pressed enter to continue]')
 
     # adds dialogue to the table of flow log file
-    lm_flow.tableAddRow([name.upper(), answer])
+    lm_flow.tableAddRow([name, answer])
 
     # if the arousal-valence values of the speech requested
     if dimensions:
@@ -134,7 +134,7 @@ def setStateInfo(stateName):
     lm_arousal_valence_CL.separate(1)
     rospy.set_param('current_state', stateName)
 
-def emotionDetection(dimensions):
+def emotionDetection(dimensions, state=""):
     lm.write('Emotion detection function started')
 
     try:
@@ -148,41 +148,53 @@ def emotionDetection(dimensions):
         lm.write('\nArousal-Valence average values: ' + str(dimensionsMean) + '\n')
 
         arousal, valence = dimensionsMean[0][0][0], dimensionsMean[1][0][0]
+        if (arousal > -0.1 and arousal < 0.1) and (valence > -0.1 and valence < 0.1):
+            lm.write('Neutral is running...')
+            lm.write('\nEmotion: <NEUTRAL>')
+            tts_proxy(nlg.dialogue['emotion'][8], 'neutral')
 
+            return
         if arousal > 0 and valence > 0:
             lm.write('QUADRANT 1 is running...')
 
-            sentences = nlg.dialogue['emotion'][1] #happy
-            sentences.extend(nlg.dialogue['emotion'][5]) #surprise
+            # sentences = nlg.dialogue['emotion'][1] #happy
+            # sentences.extend(nlg.dialogue['emotion'][1]) #surprise
 
-            if arousal > 0.5:
-                lm.write('\nEmotion: <SURPRISE>')
-
-                tts_proxy(random.choice(nlg.dialogue['emotion'][5]), 'positive')
-
+            # if arousal > 0.5:
+            #     lm.write('\nEmotion: <SURPRISE>')
+            #
+            #     tts_proxy(random.choice(nlg.dialogue['emotion'][5]), 'positive')
+            #
+            # else:
+            lm.write('\nEmotion: <POSITIVE(HAPPY)>')
+            if state == 'past' or state == 'present':
+                tts_proxy(random.choice(nlg.dialogue['emotion'][2]), 'positive')
             else:
-                lm.write('\nEmotion: <POSITIVE(HAPPY)>')
-
-                tts_proxy(random.choice(nlg.dialogue['emotion'][1]), 'positive')
+                tts_proxy(random.choice(nlg.dialogue['emotion'][3]), 'positive')
 
             return
 
         elif arousal > 0 and valence < 0:
             lm.write('QUADRANT 2 is running...')
 
-            sentences = nlg.dialogue['emotion'][0] #sad
-            sentences.extend(nlg.dialogue['emotion'][2]) #angry
-            sentences.append(nlg.dialogue['emotion'][4]) #disgust
-
-            if arousal > 0.5 and valence < -0.3:
-                lm.write('\nEmotion: <FEAR>')
-
-                tts_proxy(random.choice(nlg.dialogue['emotion'][3]), 'negative')
-
+            if state == 'past' or state == 'present':
+                sentences = nlg.dialogue['emotion'][0] #sad
+                sentences.extend(nlg.dialogue['emotion'][4]) #angry
+                sentences.append(nlg.dialogue['emotion'][6]) #disgust
             else:
-                lm.write('\nEmotion: <NEGATIVE(SAD, ANGRY, DISGUST)>')
+                sentences = nlg.dialogue['emotion'][1]  # sad
+                sentences.extend(nlg.dialogue['emotion'][5])  # angry
+                sentences.append(nlg.dialogue['emotion'][7])  # disgust1
 
-                tts_proxy(random.choice(sentences), 'negative')
+            # if arousal > 0.5 and valence < -0.3:
+            #     lm.write('\nEmotion: <FEAR>')
+            #
+            #     tts_proxy(random.choice(nlg.dialogue['emotion'][3]), 'negative')
+            #
+            # else:
+            lm.write('\nEmotion: <NEGATIVE(SAD, ANGRY, DISGUST)>')
+
+            tts_proxy(random.choice(sentences), 'negative')
 
             return
 
@@ -190,8 +202,11 @@ def emotionDetection(dimensions):
             lm.write('QUADRANT 3 is running...')
 
             lm.write('\nEmotion: <SAD>')
+            if state == 'past' or state == 'present':
+                tts_proxy(random.choice(nlg.dialogue['emotion'][0]), 'negative')
+            else:
+                tts_proxy(random.choice(nlg.dialogue['emotion'][1]), 'negative')
 
-            tts_proxy(random.choice(nlg.dialogue['emotion'][0]), 'negative')
 
             return
 
@@ -200,8 +215,10 @@ def emotionDetection(dimensions):
             lm.write('QUADRANT 4 is running...')
 
             lm.write('\nEmotion: <HAPPY>')
-
-            tts_proxy(random.choice(nlg.dialogue['emotion'][1]), 'positive')
+            if state == 'past' or state == 'present':
+                tts_proxy(random.choice(nlg.dialogue['emotion'][2]), 'positive')
+            else:
+                tts_proxy(random.choice(nlg.dialogue['emotion'][3]), 'positive')
 
             return
 
@@ -243,7 +260,7 @@ class PredProcess(smach.State):
             tts_proxy(nlg.dialogue['introduction'][0], 'hello')
             tts_proxy(nlg.dialogue['introduction'][1])
 
-            lm.write('User name is initialized as [' + name.upper() + ']')
+            lm.write('User name is initialized as [' + name + ']')
 
             self.first_time = False
 
@@ -253,8 +270,8 @@ class PredProcess(smach.State):
             if userdata.task in self.task_condition.keys():
                 self.condition = self.task_condition[userdata.task]
 
-            if userdata.condition == 'c2' and self.condition == 'c3':
-                rospy.set_param('arousal_valence', [])
+            # if userdata.condition == 'c2' and self.condition == 'c3':
+            #     rospy.set_param('arousal_valence', [])
 
             userdata.condition = self.condition
             lm_flow.setTableCondition(self.condition.upper())
@@ -341,7 +358,7 @@ class PastImpactful(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -353,27 +370,30 @@ class PastImpactful(smach.State):
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['past']['impactful'][2])
-            speech_text = speech_proxy()
+            speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
+            userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['past']['impactful'][3])
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['past']['impactful'][4])
 
-            if userdata.condition == 'c2' or userdata.condition == 'c3':
-                emotionDetection(userdata.dimensions)
 
             count += 1
 
             if count == 1:
                 tts_proxy(nlg.dialogue['past']['impactful'][5].format('second'))
-            elif count == 2:
-                tts_proxy(nlg.dialogue['past']['impactful'][5].format('third'))
+            # elif count == 2:
+            #     tts_proxy(nlg.dialogue['past']['impactful'][5].format('third'))
 
         return 'predprocess'
 
@@ -397,7 +417,7 @@ class PastGrateful(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -409,28 +429,30 @@ class PastGrateful(smach.State):
             time.sleep(DELAY)
 
             tts_proxy(random.choice(nlg.dialogue['past']['grateful'][4]))
-            speech_text = speech_proxy()
+            speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
+            userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
 
             tts_proxy(random.choice(nlg.dialogue['past']['grateful'][5]))
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                sentence = random.choice(nlg.dialogue['phrases'][2])
+                tts_proxy(sentence)
+
+                emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['past']['grateful'][6])
 
-            if userdata.condition == 'c2' or userdata.condition == 'c3':
-                sentence = random.choice(nlg.dialogue['phrases'][2])
-                sentence += random.choice(nlg.dialogue['phrases'][3])
-                tts_proxy(sentence)
-
-                emotionDetection(userdata.dimensions)
 
             count += 1
 
-            if count != 3:
+            if count != 2:
                 tts_proxy(nlg.dialogue['past']['grateful'][7])
 
         return 'predprocess'
@@ -453,7 +475,7 @@ class PastAccomplishments(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -472,6 +494,8 @@ class PastAccomplishments(smach.State):
             tts_proxy(random.choice(nlg.dialogue['past']['accomplishments'][3]))
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
 
@@ -479,14 +503,14 @@ class PastAccomplishments(smach.State):
 
             if userdata.condition == 'c2' or userdata.condition == 'c3':
                 sentence = random.choice(nlg.dialogue['phrases'][0])
-                sentence += random.choice(nlg.dialogue['phrases'][1])
+                # sentence += random.choice(nlg.dialogue['phrases'][0])
                 tts_proxy(sentence)
 
-                emotionDetection(userdata.dimensions)
+                emotionDetection(userdata.dimensions, state="past")
 
             count += 1
 
-            if count != 3:
+            if count != 2:
                 tts_proxy(nlg.dialogue['past']['accomplishments'][5])
 
         return 'predprocess'
@@ -508,7 +532,7 @@ class PresentImpactful(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -520,27 +544,31 @@ class PresentImpactful(smach.State):
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['present']['impactful'][2])
-            speech_text = speech_proxy()
+            speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
+            userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="present")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['present']['impactful'][3])
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
-
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="present")
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['present']['impactful'][4])
 
             if userdata.condition == 'c2' or userdata.condition == 'c3':
-                emotionDetection(userdata.dimensions)
+                emotionDetection(userdata.dimensions, state="present")
 
             count += 1
 
             if count == 1:
                 tts_proxy(nlg.dialogue['present']['impactful'][5].format('second'))
-            elif count == 2:
-                tts_proxy(nlg.dialogue['present']['impactful'][5].format('third'))
+            # elif count == 2:
+            #     tts_proxy(nlg.dialogue['present']['impactful'][5].format('third'))
 
         return 'predprocess'
 
@@ -563,7 +591,7 @@ class PresentGrateful(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -575,13 +603,17 @@ class PresentGrateful(smach.State):
             time.sleep(DELAY)
 
             tts_proxy(random.choice(nlg.dialogue['present']['grateful'][3]))
-            speech_text = speech_proxy()
+            speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="present")
 
             time.sleep(DELAY)
 
             tts_proxy(random.choice(nlg.dialogue['present']['grateful'][4]))
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="present")
 
             time.sleep(DELAY)
 
@@ -589,14 +621,13 @@ class PresentGrateful(smach.State):
 
             if userdata.condition == 'c2' or userdata.condition == 'c3':
                 sentence = random.choice(nlg.dialogue['phrases'][2])
-                sentence += random.choice(nlg.dialogue['phrases'][3])
                 tts_proxy(sentence)
 
-                emotionDetection(userdata.dimensions)
+                emotionDetection(userdata.dimensions, state="present")
 
             count += 1
 
-            if count != 3:
+            if count != 2:
                 tts_proxy(nlg.dialogue['present']['grateful'][6])
 
         return 'predprocess'
@@ -619,7 +650,7 @@ class PresentAccomplishments(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -638,6 +669,8 @@ class PresentAccomplishments(smach.State):
             tts_proxy(random.choice(nlg.dialogue['present']['accomplishments'][3]))
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="present")
 
             time.sleep(DELAY)
 
@@ -645,14 +678,12 @@ class PresentAccomplishments(smach.State):
 
             if userdata.condition == 'c2' or userdata.condition == 'c3':
                 sentence = random.choice(nlg.dialogue['phrases'][0])
-                sentence += random.choice(nlg.dialogue['phrases'][1])
                 tts_proxy(sentence)
-
-                emotionDetection(userdata.dimensions)
+                emotionDetection(userdata.dimensions, state="present")
 
             count += 1
 
-            if count != 3:
+            if count != 2:
                 tts_proxy(nlg.dialogue['present']['accomplishments'][5])
 
         return 'predprocess'
@@ -676,7 +707,7 @@ class FutureImpactful(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -688,27 +719,31 @@ class FutureImpactful(smach.State):
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['future']['impactful'][3])
-            speech_text = speech_proxy()
+            speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
+            userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="future")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['future']['impactful'][4])
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="future")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['future']['impactful'][5])
-
             if userdata.condition == 'c2' or userdata.condition == 'c3':
-                emotionDetection(userdata.dimensions)
+                emotionDetection(userdata.dimensions, state="future")
 
             count += 1
 
             if count == 1:
                 tts_proxy(nlg.dialogue['future']['impactful'][6].format('second'))
-            elif count == 2:
-                tts_proxy(nlg.dialogue['future']['impactful'][6].format('third'))
+            # elif count == 2:
+            #     tts_proxy(nlg.dialogue['future']['impactful'][6].format('third'))
 
         return 'predprocess'
 
@@ -732,7 +767,7 @@ class FutureGrateful(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -744,28 +779,31 @@ class FutureGrateful(smach.State):
             time.sleep(DELAY)
 
             tts_proxy(random.choice(nlg.dialogue['future']['grateful'][4]))
-            speech_text = speech_proxy()
+            speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
+            userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="future")
 
             time.sleep(DELAY)
 
             tts_proxy(random.choice(nlg.dialogue['future']['grateful'][5]))
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="future")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['future']['grateful'][6])
 
             if userdata.condition == 'c2' or userdata.condition == 'c3':
-                sentence = random.choice(nlg.dialogue['phrases'][2])
-                sentence += random.choice(nlg.dialogue['phrases'][3])
+                sentence = random.choice(nlg.dialogue['phrases'][3])
                 tts_proxy(sentence)
-
-                emotionDetection(userdata.dimensions)
+                emotionDetection(userdata.dimensions, state="future")
 
             count += 1
 
-            if count != 3:
+            if count != 2:
                 tts_proxy(nlg.dialogue['future']['grateful'][7])
 
         return 'predprocess'
@@ -790,7 +828,7 @@ class FutureAccomplishments(smach.State):
 
         count = 0
 
-        while count < 3:
+        while count < 2:
 
             speech_text = speech_proxy(TIMEOUT)
 
@@ -809,21 +847,23 @@ class FutureAccomplishments(smach.State):
             tts_proxy(random.choice(nlg.dialogue['future']['accomplishments'][4]))
             speech_text = speech_proxy(dimensions=True, condition=userdata.condition)
             userdata.dimensions = speech_text[1]
+            if userdata.condition == 'c2' or userdata.condition == 'c3':
+                emotionDetection(userdata.dimensions, state="future")
 
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['future']['accomplishments'][5])
 
             if userdata.condition == 'c2' or userdata.condition == 'c3':
-                sentence = nlg.dialogue['phrases'][0][3]
-                sentence += nlg.dialogue['phrases'][4]
+                sentence = random.choice(nlg.dialogue['phrases'][1])
+                # sentence += nlg.dialogue['phrases'][1]
                 tts_proxy(sentence)
 
-                emotionDetection(userdata.dimensions)
+                emotionDetection(userdata.dimensions, state="future")
 
             count += 1
 
-            if count != 3:
+            if count != 2:
                 tts_proxy(nlg.dialogue['future']['accomplishments'][6])
 
         return 'predprocess'
@@ -898,7 +938,7 @@ class Goodbye(smach.State):
     def execute(self, userdata):
         setStateInfo('GOODBYE')
 
-        tts_proxy(nlg.dialogue['goodbye'], 'goodbye')
+        tts_proxy(nlg.dialogue['goodbye'].format(EXPERIMENTER), 'goodbye')
 
         return 'terminate'
 
