@@ -97,7 +97,7 @@ dialogue = {"general":  [" I couldn't understand what you said. Can you please r
                             " Great, let's begin then.",
                             " Please come in, {}."],
 
-            "past":     {"impactful": [" First, let's focus on the past. Let's talk about two impactful things that happened in your past - any two things that affected you in the recent past, in the past month or a few weeks. Can you tell me any two impactful things? You can start telling me the first one.",
+            "past":     {"impactful": [" First, let's focus on the past. Let's talk about two impactful things that happened in your past, any two things that affected you in the recent past, in the past month or a few weeks. Can you tell me any two impactful things? You can start telling me the first one.",
                                     " If you have trouble coming up with these, remember that it does  not need to be huge, just something impactful. It could have been a rainy or a sunny day in the recent past, or having a brunch with your flatmate, or meeting a friend.",
                                     " How does talking about this to me make you feel now?",
                                     " How do you think this event is affecting you now?",

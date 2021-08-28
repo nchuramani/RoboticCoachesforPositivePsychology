@@ -59,7 +59,7 @@ if saveFrames:
         os.mkdir('faces_imagined')
 
 # creating log file to keep the frames' dimensional outputs
-lm_arousal_valence_cl = LogManager('arousal_valence_CL')
+lm_arousal_valence_cl = LogManager('arousal_valence_cl')
 lm_arousal_valence_cl.write('ORDER: [Arousal, Valence]')
 lm_arousal_valence_cl.separate(2)
 
@@ -337,8 +337,8 @@ def apply_network_to_images_of_dir(loadPath, path_to_dir, path_to_out_dir):
     arousal = [np.arange(0.75, -0.751, -0.25)]
     arousal = np.repeat(arousal, 7, axis=0)
     arousal = np.asarray([item for sublist in arousal for item in sublist]).reshape((49, 1))
-    generate_images(loadPath, valence, arousal, path_to_dir, path_to_out_dir)
-    return generate_encodings(loadPath, path_to_out_dir)
+    generate_images(loadPath, valence, arousal, path_to_dir + "/", path_to_out_dir + "/")
+    return generate_encodings(loadPath, path_to_out_dir + "/")
 
 
 
@@ -503,55 +503,60 @@ def annotate_GDM(trained_GWRs, test_data):
 
 def callback(data):
     if saveFrames and str(rospy.get_param('current_state')) != "NONE":
-        frameDir = os.path.join(lm.getFileDir(), 'frames/')
-        faceDir = os.path.join(lm.getFileDir(), 'faces/')
         imaginedFaceDir = os.path.join(lm.getFileDir(), 'faces_imagined/')
 
-        if str(rospy.get_param('current_state')) not in os.listdir(frameDir):
-            if not os.path.exists(os.path.join(frameDir, str(rospy.get_param('current_state')))):
-                frameDir = os.path.join(frameDir, str(rospy.get_param('current_state'))) + "/"
-                os.mkdir(frameDir)
-                faceDir = os.path.join(faceDir, str(rospy.get_param('current_state'))) + "/"
-                os.mkdir(faceDir)
+        if str(rospy.get_param('current_state')) not in os.listdir(imaginedFaceDir):
+            if not os.path.exists(
+                    os.path.join(os.path.join(lm.getFileDir(), 'faces_imagined'),
+                                 str(rospy.get_param('current_state')))):
+                os.mkdir(
+                    os.path.join(os.path.join(lm.getFileDir(), 'faces_imagined'),
+                                 str(rospy.get_param('current_state'))))
 
-                imaginedFaceDir = os.path.join(imaginedFaceDir, str(rospy.get_param('current_state'))) + "/"
-                os.mkdir(imaginedFaceDir)
+        novel_data, novel_labels = apply_network_to_images_of_dir(loadPath=CAAE_LoadPath,
+                                                                  path_to_dir=os.path.join(
+                                                                      os.path.join(lm.getFileDir(), 'faces'),
+                                                                      str(rospy.get_param('current_state'))),
+                                                                  path_to_out_dir=os.path.join(
+                                                                      os.path.join(lm.getFileDir(),
+                                                                                   'faces_imagined'),
+                                                                      str(rospy.get_param('current_state'))))
 
-            novel_data, novel_labels = apply_network_to_images_of_dir(loadPath=CAAE_LoadPath, path_to_dir=faceDir,
-                                                                      path_to_out_dir=imaginedFaceDir)
+        if len(os.listdir(gwrs_path)) > 0:
+            input_trained_GWRs = []
+            input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))
+            input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_S", NetworkClass=EpisodicGWR))
+        else:
+            input_trained_GWRs = (None, None)
+        # Training with Novel Data
+        lm.write("Running GDM Training for " + str(rospy.get_param('current_state')))
+        output_trained_GWRs, cccs = train_GDM(data=novel_data, labels=novel_labels, trained_GWRs=input_trained_GWRs,
+                                       train_replay=True, train_imagine=True)
 
-            if len(os.listdir(gwrs_path)) > 0:
-                input_trained_GWRs = []
-                input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))
-                input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_S", NetworkClass=EpisodicGWR))
-            else:
-                input_trained_GWRs = (None, None)
-            # Training with Novel Data
-            output_trained_GWRs, cccs = train_GDM(data=novel_data, labels=novel_labels, trained_GWRs=input_trained_GWRs,
-                                           train_replay=True, train_imagine=True)
-
-            if not os.path.exists(gwrs_path):
-                os.makedirs(gwrs_path)
-            gtls.export_network(gwrs_path + "/GDM_E", output_trained_GWRs[0])
-            gtls.export_network(gwrs_path + "/GDM_S", output_trained_GWRs[1])
+        if not os.path.exists(gwrs_path):
+            os.makedirs(gwrs_path)
+        gtls.export_network(gwrs_path + "/GDM_E", output_trained_GWRs[0])
+        gtls.export_network(gwrs_path + "/GDM_S", output_trained_GWRs[1])
 
 
-            # Annotate User Data
-            encodings = generate_encodings(CAAE_LoadPath, faceDir, test=True)
-            episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
-            for result in episodic_results:
-                lm_arousal_valence_cl.write(str(numpy.array(result).reshape((2, 1, 1))).replace('\n', ''),
-                                            printText=False)
+        # Annotate User Data
+        encodings = generate_encodings(CAAE_LoadPath,
+                                       os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
+                                       test=True)
+        episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
+        for result in episodic_results:
+            lm_arousal_valence_cl.write(str(numpy.array(result).reshape((2, 1, 1))).replace('\n', ''),
+                                        printText=False)
 
-            # creates message to save the list
-            text = str(datetime.now()).replace(' ', '_') + ' - ' + str(episodic_results).replace('\n', '')
+        # creates message to save the list
+        text = str(datetime.now()).replace(' ', '_') + ' - ' + str(episodic_results).replace('\n', '')
 
-            # adds value to the list that is held in a rosparam called 'arousal_valence'
-            if rospy.get_param('arousal_valence_cl') != 'NONE':
-                rospy.set_param('arousal_valence_cl', rospy.get_param('arousal_valence_cl') + [text])
+        # adds value to the list that is held in a rosparam called 'arousal_valence'
+        if rospy.get_param('arousal_valence_cl') != 'NONE':
+            rospy.set_param('arousal_valence_cl', rospy.get_param('arousal_valence_cl') + [text])
 
-            else:
-                rospy.set_param('arousal_valence_cl', [text])
+        else:
+            rospy.set_param('arousal_valence_cl', [text])
 
 
 def listener():

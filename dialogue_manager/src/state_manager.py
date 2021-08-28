@@ -30,13 +30,16 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # getting the name of the user
 name = str(rospy.get_param('name'))
 
+# getting the name of the experimenter
+EXPERIMENTER = str(rospy.get_param('experimenter'))
+
 # getting the values from the config file. they can be modified.
 with open('./config.txt', 'r') as f:
     fLines = f.readlines()
 
     TIMEOUT = fLines[2].split('=')[1].strip()
     DELAY = float(fLines[3].split('=')[1].strip())
-    EXPERIMENTER = fLines[11].split('=')[1].strip()
+    # EXPERIMENTER = fLines[11].split('=')[1].strip()
 
 # creating the main log file
 lm = LogManager('main')
@@ -47,7 +50,7 @@ lm_flow.createTable(['State', 'Condition', 'Speaker', 'Dialogue'])
 
 # creating/connecting log file to get the frames' dimensional outputs
 lm_arousal_valence = LogManager('arousal_valence')
-lm_arousal_valence_CL = LogManager('arousal_valence_CL')
+lm_arousal_valence_CL = LogManager('arousal_valence_cl')
 
 # initializing the ROS node
 rospy.init_node('state_manager', anonymous=True)
@@ -151,7 +154,7 @@ def emotionDetection(dimensions, state=""):
         if (arousal > -0.1 and arousal < 0.1) and (valence > -0.1 and valence < 0.1):
             lm.write('Neutral is running...')
             lm.write('\nEmotion: <NEUTRAL>')
-            tts_proxy(nlg.dialogue['emotion'][8], 'neutral')
+            tts_proxy(nlg.dialogue['emotion'][8], 'normal_talk')
 
             return
         if arousal > 0 and valence > 0:
