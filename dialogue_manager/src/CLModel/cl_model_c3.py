@@ -540,7 +540,7 @@ def callback(data):
             encodings = generate_encodings(CAAE_LoadPath, faceDir, test=True)
             episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
             for result in episodic_results:
-                lm_arousal_valence_cl.write(str(round(numpy.array(result).reshape((2, 1, 1))), 3).replace('\n', ''),
+                lm_arousal_valence_cl.write(str(numpy.array(result).reshape((2, 1, 1))).replace('\n', ''),
                                             printText=False)
 
             # creates message to save the list

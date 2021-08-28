@@ -1,14 +1,17 @@
 <launch>
 	<arg name="session" default="Experiment"/>
 	<arg name="name" default="User"/>
+    <arg name="experimenter" default="Nikhil"/>
 	<arg name="save_frames" default="0"/>
 
 	<param name="session" value="$(arg session)"/>
 	<param name="name" value="$(arg name)"/>
 	<param name="save_frames" value="$(arg save_frames)"/>
-	
+    <param name="experimenter" value="$(arg experimenter)"/>
+
 	<param name="current_state" value="NONE"/>
 	<param name="arousal_valence" value="NONE"/>
+	<param name="arousal_valence_cl" value="NONE"/>
 
 	<param name="session_folder" value="NONE"/>
 
@@ -16,5 +19,6 @@
 	<node name="speech_recognizer_service" pkg="dialogue_manager" type="speech_recognizer_service.py" output="screen"/>
 	<node name="camera_publisher" pkg="dialogue_manager" type="camera_publisher.py" output="screen"/>
 	<node name="face_channel" pkg="dialogue_manager" type="face_channel.py" output="screen"/>
+    <node name="cl_model" pkg="dialogue_manager" type="cl_model_c3.py" output="screen"/>
 	<node name="state_manager" pkg="dialogue_manager" type="state_manager.py" output="screen"/>
 </launch>
