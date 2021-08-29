@@ -255,8 +255,6 @@ class PredProcess(smach.State):
 
         #choosing the condition randomly
         conditions = ['c1', 'c2', 'c3']
-        # conditions = ['c2', 'c2', 'c2']
-        conditions = ['c3', 'c3', 'c3']
         random.shuffle(conditions)
 
         self.task_condition = {'past': conditions[0], 'present': conditions[1], 'future': conditions[2]}
