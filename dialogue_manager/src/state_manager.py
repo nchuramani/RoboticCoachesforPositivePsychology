@@ -144,14 +144,12 @@ def setStateInfo(stateName):
 
 def emotionDetection(dimensions, state=""):
     lm.write('Emotion detection function started')
-    print(dimensions)
 
     try:
         # converting dimension values to python lists
         dimensions = list(map(lambda x: x.replace('] [', '],['), dimensions))
         dimensions = list(map(lambda x: x.replace(' ', ''), dimensions))
         dimensions = list(map(lambda x: json.loads(x), dimensions))
-        print(dimensions)
         # getting the mean valued list of the dimensions
         dimensionsMean = np.mean(dimensions, axis=0)
         lm.write('\nArousal-Valence average values: ' + str(dimensionsMean) + '\n')
