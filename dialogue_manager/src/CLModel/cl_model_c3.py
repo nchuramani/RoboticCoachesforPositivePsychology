@@ -4,6 +4,7 @@ import numpy
 from GDM_Imagine_Dimensional.episodic_gwr import EpisodicGWR
 from GDM_Imagine_Dimensional import gtls
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 import re
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
@@ -235,7 +236,7 @@ def generate_images(loadPath, valence, arousal, path_to_dir, path_to_out_dir):
         images_tensor = graph.get_tensor_by_name("input_images:0")
 
         # randomly selecting images
-        files = numpy.random.choice(os.listdir(path_to_dir), size=20)
+        files = numpy.random.choice(os.listdir(path_to_dir), size=50)
 
         # load input
         files_already = os.listdir(path_to_out_dir)
@@ -269,7 +270,9 @@ def generate_encodings(loadPath, path_to_out_dir, test=False):
         images_tensor = graph.get_tensor_by_name("input_images:0")
 
         # load input
-        files = sort_nicely(os.listdir(path_to_out_dir))[-25:]
+        files = sort_nicely(os.listdir(path_to_out_dir))[0:49]
+        face_time_stamps = [facename.split("_frame_")[1].split('.jp')[0] for facename in files]
+
         if not test:
             for file in files:
                 arousal = []
@@ -319,7 +322,7 @@ def generate_encodings(loadPath, path_to_out_dir, test=False):
                 dataX = encodings
             else:
                 dataX = np.vstack([dataX, encodings])
-            return dataX
+            return dataX, face_time_stamps
 def apply_network_to_images_of_dir(loadPath, path_to_dir, path_to_out_dir):
     """
     Applies the trained network to all images found in path_to_dir for 49 emotions respectively.
@@ -348,7 +351,7 @@ def select_frames_to_imagine(path_to_dir, path_to_out_dir, size):
         shutil.copyfile(path_to_dir + file, path_to_out_dir + file)
 
 
-def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
+def train_GDM(data, labels, trained_GWRs):
     def replay_samples(net, size):
         samples = np.zeros(size, dtype=int)
         r_weights = np.zeros((net.num_nodes, size, net.dimension))
@@ -363,9 +366,6 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
                 r_labels[i, 0, r] = net.alabelsValence[int(samples[r])]
                 r_labels[i, 1, r] = net.alabelsArousal[int(samples[r])]
         return r_weights, r_labels
-
-    # lm.write("Replay: " + str(train_replay))
-    # lm.write("Imagination: " + str(train_imagine))
 
     '''
     Episodic-GWR supports multi-class neurons.
@@ -416,10 +416,11 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
 
     # Epochs per sample for incremental learning
     epochs = 5
+    epochs_replay = 2
     # Initialising experienced episodes to Zero.
     n_episodes = 0
     # Number of samples per epoch
-    batch_size = 10
+    batch_size = 5
 
     # Replay parameters; With num_context = 0, RNATs size set to 1, that is, only looking at previous BMU.
     # Size of RNATs
@@ -452,8 +453,8 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
                               ds_labels[s:s + batch_size],
                               epochs, a_threshold[0], beta, e_learning_rates,
                               context, hab_threshold=h_thresholds[0], regulated=0)
-        e_weights, ccc, e_labels = g_episodic.test_av(ds_vectors[s:s + batch_size], ds_labels[s:s + batch_size],
-                                                         test_accuracy=True)
+        e_weights, e_labels = g_episodic.test_av(ds_vectors[s:s + batch_size], ds_labels[s:s + batch_size],
+                                                         test_accuracy=False)
         # lm.write("Training Semantic Regular")
         g_semantic.train_egwr(e_weights, ds_labels[s:s + batch_size],
                               epochs, a_threshold[1], beta, s_learning_rates,
@@ -465,12 +466,12 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
             # lm.write("Training Episodic Replay")
             # Episodic Pseudo-Replay
             g_episodic.train_egwr(replay_weights, replay_labels,
-                                  epochs//3, a_threshold[0], beta,
+                                  epochs_replay, a_threshold[0], beta,
                                   e_learning_rates, context=False, hab_threshold=h_thresholds[0], regulated=0)
             # lm.write("Training Semantic Replay")
             # Semantic Pseudo-Replay
             g_semantic.train_egwr(replay_weights, replay_labels,
-                                  epochs//3, a_threshold[1], beta,
+                                  epochs_replay, a_threshold[1], beta,
                                       s_learning_rates, context=False, hab_threshold=h_thresholds[1], regulated=1)
 
 
@@ -481,10 +482,10 @@ def train_GDM(data, labels, trained_GWRs, train_replay, train_imagine):
         n_episodes += 1
 
     # Evaluation with only Current Data
-    e_weights, e_ccc, e_labels = g_episodic.test_av(ds_vectors, ds_labels, test_accuracy=True)
-    s_weights, s_ccc, s_labels = g_semantic.test_av(e_weights, ds_labels, test_accuracy=True)
+    e_weights, e_labels = g_episodic.test_av(ds_vectors, ds_labels, test_accuracy=False)
+    s_weights, s_labels = g_semantic.test_av(e_weights, ds_labels, test_accuracy=False)
 
-    return (g_episodic, g_semantic), (e_ccc, s_ccc)
+    return (g_episodic, g_semantic)
 
 
 def annotate_GDM(trained_GWRs, test_data):
@@ -503,6 +504,7 @@ def annotate_GDM(trained_GWRs, test_data):
 
 def callback(data):
     if saveFrames and str(rospy.get_param('current_state')) != "NONE":
+        output_trained_GWRs = None
         imaginedFaceDir = os.path.join(lm.getFileDir(), 'faces_imagined/')
 
         if str(rospy.get_param('current_state')) not in os.listdir(imaginedFaceDir):
@@ -513,51 +515,50 @@ def callback(data):
                     os.path.join(os.path.join(lm.getFileDir(), 'faces_imagined'),
                                  str(rospy.get_param('current_state'))))
 
-        novel_data, novel_labels = apply_network_to_images_of_dir(loadPath=CAAE_LoadPath,
-                                                                  path_to_dir=os.path.join(
-                                                                      os.path.join(lm.getFileDir(), 'faces'),
-                                                                      str(rospy.get_param('current_state'))),
-                                                                  path_to_out_dir=os.path.join(
-                                                                      os.path.join(lm.getFileDir(),
-                                                                                   'faces_imagined'),
-                                                                      str(rospy.get_param('current_state'))))
-
         if len(os.listdir(gwrs_path)) > 0:
             input_trained_GWRs = []
             input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))
             input_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_S", NetworkClass=EpisodicGWR))
         else:
             input_trained_GWRs = (None, None)
-        # Training with Novel Data
-        lm.write("Running GDM Training for " + str(rospy.get_param('current_state')))
-        output_trained_GWRs, cccs = train_GDM(data=novel_data, labels=novel_labels, trained_GWRs=input_trained_GWRs,
-                                       train_replay=True, train_imagine=True)
 
+        # Training with Imagined Data Every 2nd Interaction
+        if int(rospy.get_param('imagination_running_flag')) % 2 == 0:
+            # Imagining Faces
+            imagined_data, imagined_labels = apply_network_to_images_of_dir(loadPath=CAAE_LoadPath,
+                                                                            path_to_dir=os.path.join(
+                                                                                os.path.join(lm.getFileDir(), 'faces'),
+                                                                                str(rospy.get_param('current_state'))),
+                                                                            path_to_out_dir=os.path.join(
+                                                                                os.path.join(lm.getFileDir(),
+                                                                                             'faces_imagined'),
+                                                                                str(rospy.get_param('current_state'))))
+
+            lm.write("Running GDM Training for " + str(rospy.get_param('current_state')), printText=False)
+            output_trained_GWRs = train_GDM(data=imagined_data, labels=imagined_labels,
+                                                  trained_GWRs=input_trained_GWRs)
+            # Annotate User Data
+
+        encodings, face_time_stamps = generate_encodings(CAAE_LoadPath,
+                                       os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
+                                       test=True)
+        if output_trained_GWRs is None:
+            output_trained_GWRs = []
+            output_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))
+            output_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_S", NetworkClass=EpisodicGWR))
+        episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
+        for r in range(len(face_time_stamps)):
+            text = face_time_stamps[r].replace('::', '_') + " - " + str(numpy.array(episodic_results[r]).reshape((2, 1, 1))).replace('\n', '')
+            lm_arousal_valence_cl.write(text, dateTime=False, printText=False)
+            if rospy.get_param('arousal_valence_cl') != 'NONE':
+                rospy.set_param('arousal_valence_cl', rospy.get_param('arousal_valence_cl') + [text])
+            else:
+                rospy.set_param('arousal_valence_cl', [text])
         if not os.path.exists(gwrs_path):
             os.makedirs(gwrs_path)
         gtls.export_network(gwrs_path + "/GDM_E", output_trained_GWRs[0])
         gtls.export_network(gwrs_path + "/GDM_S", output_trained_GWRs[1])
-
-
-        # Annotate User Data
-        encodings = generate_encodings(CAAE_LoadPath,
-                                       os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
-                                       test=True)
-        episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
-        for result in episodic_results:
-            lm_arousal_valence_cl.write(str(numpy.array(result).reshape((2, 1, 1))).replace('\n', ''),
-                                        printText=False)
-
-        # creates message to save the list
-        text = str(datetime.now()).replace(' ', '_') + ' - ' + str(episodic_results).replace('\n', '')
-
-        # adds value to the list that is held in a rosparam called 'arousal_valence'
-        if rospy.get_param('arousal_valence_cl') != 'NONE':
-            rospy.set_param('arousal_valence_cl', rospy.get_param('arousal_valence_cl') + [text])
-
-        else:
-            rospy.set_param('arousal_valence_cl', [text])
-
+        rospy.set_param('imagination_running_flag', str(int(rospy.get_param('imagination_running_flag')) + 1))
 
 def listener():
     rospy.Subscriber('camera_channel', Image, callback)
@@ -567,8 +568,5 @@ def listener():
 
 
 if __name__ == '__main__':
-    # adding parent directory of the file to the system to import log manager
-
-
     listener()
     lm_arousal_valence_cl.close()

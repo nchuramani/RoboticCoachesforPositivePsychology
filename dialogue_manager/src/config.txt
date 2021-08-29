@@ -1,4 +1,4 @@
-PEPPER_IP = 192.168.1.100
+PEPPER_IP = 127.0.0.0
 PEPPER_PORT = 9559
 USER_SPEECH_TIMEOUT = 15
 PEPPER_SPEECH_DELAY = 2
@@ -8,8 +8,8 @@ PEPPER_CAMERA_RESOLUTION = 2
 PEPPER_CAMERA_COLORSPACE = 13
 PEPPER_CAMERA_FPS = 30
 MICROPHONE_NAME = HD Pro Webcam C920: USB Audio (hw:2,0)
-PEPPER_SPEAK_SPEED = 95
-EXPERIMENTER_NAME = Minya
+PEPPER_SPEAK_SPEED = 90
+EXPERIMENTER_NAME = Nikhil
 
 #for pepper camera parameters, see: http://doc.aldebaran.com/2-0/family/juliette_technical/video_juliette.html
 #the lines' order cannot be changed!
@@ -17,5 +17,6 @@ EXPERIMENTER_NAME = Minya
 # MICROPHONE_NAME = Jabra Speak 710: USB Audio (hw:2,0)
 # MICROPHONE_NAME = HD Pro Webcam C920: USB Audio (hw:2,0)
 # MICROPHONE_NAME = Blue Microphones: USB Audio (hw:2,0)
+# MICROPHONE_NAME = sysdefault
 # PEPPER_IP = 127.0.0.0
 # PEPPER_IP = 192.168.1.100

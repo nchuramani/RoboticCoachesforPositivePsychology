@@ -11,7 +11,8 @@
 
 	<param name="current_state" value="NONE"/>
 	<param name="arousal_valence" value="NONE"/>
-	<param name="arousal_valence_CL" value="NONE"/>
+	<param name="arousal_valence_cl" value="NONE"/>
+	<param name="imagination_running_flag" value="0"/>
 
 	<param name="session_folder" value="NONE"/>
 

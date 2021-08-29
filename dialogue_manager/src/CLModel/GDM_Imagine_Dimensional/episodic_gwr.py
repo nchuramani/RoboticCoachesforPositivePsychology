@@ -7,6 +7,7 @@ gwr-tb :: Episodic-GWR
 """
 
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 import math
 from .gammagwr import GammaGWR
 from .utils import concordance_correlation_coefficient
@@ -162,7 +163,7 @@ class EpisodicGWR(GammaGWR):
         self.a_dec = 0.1
         self.mod_rate = 0.01
         self.misclassified_thresh = 0.3
-        self.alphas = self.compute_alphas(self.depth)
+        # self.alphas = self.compute_alphas(self.depth)
         self.av_delta = 0.1
 
         # Start training
@@ -402,4 +403,5 @@ class EpisodicGWR(GammaGWR):
 
             return self.bmus_weight, [ccc_a, ccc_v], np.hstack([np.array(valences).reshape((len(valences), 1)),
                                                                 np.array(arousals).reshape((len(arousals), 1))])
-        return self.bmus_weight, np.hstack([np.array(valences), np.array(arousals)])
+        return self.bmus_weight,  np.hstack([np.array(valences).reshape((len(valences), 1)),
+                                             np.array(arousals).reshape((len(arousals), 1))])

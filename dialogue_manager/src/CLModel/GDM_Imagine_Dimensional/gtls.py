@@ -7,6 +7,7 @@ gwr-tb :: utilities
 import csv
 import pickle
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 import matplotlib.pyplot as plt
 
 def import_network(file_name, NetworkClass):

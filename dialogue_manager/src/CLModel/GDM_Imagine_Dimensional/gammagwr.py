@@ -6,6 +6,7 @@ gwr-tb :: Gamma-GWR based on Marsland et al. (2002)'s Grow-When-Required network
 """
 
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 import math
 from heapq import nsmallest
 from sklearn.metrics.pairwise import cosine_distances, paired_euclidean_distances
@@ -27,7 +28,7 @@ class GammaGWR(object):
         # return np.linalg.norm(np.dot(self.alphas.T, (x-y)))
         if type.startswith('euc'):
             # return np.linalg.norm(np.dot(self.alphas.T, (paired_euclidean_distances(x,y))))
-            return np.linalg.norm(np.dot(self.alphas.T, x - y))
+            return np.linalg.norm(x - y)
             # return np.linalg.norm(np.dot(self.alphas.T, (x-y)))
 
         else:

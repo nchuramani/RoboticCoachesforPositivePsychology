@@ -11,6 +11,7 @@ from datetime import datetime
 
 import json
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 
 import smach
 import smach_ros
@@ -59,6 +60,7 @@ lm.write('state_manager.py node initialized.')
 # arguments for the knowledge base
 rospy.wait_for_service('speech_recognizer_srv')
 rospy.wait_for_service('text_to_speech_srv')
+SECONDS_FOR_AV_COMPUTE = 8
 
 try:
     # creating service proxy to use the text to speech service
@@ -110,15 +112,18 @@ def speech_proxy(timeout='', dimensions=False, experimenterAnswer=False, conditi
 
     # adds dialogue to the table of flow log file
     lm_flow.tableAddRow([name, answer])
-
     # if the arousal-valence values of the speech requested
     if dimensions:
         lm.write('\nArousal Valence frames start time:' + str(start))
         lm.write('Arousal Valence frames stop time:' + str(stop) + '\n')
         if condition == 'c2':
-            return speech_text, lm_arousal_valence.getTimeIntervalLines(start, stop, False, lines=rospy.get_param('arousal_valence'))
+            return speech_text, lm_arousal_valence.getLastLines(count=30 * SECONDS_FOR_AV_COMPUTE, dateTime=False)
+            # return speech_text, lm_arousal_valence.getTimeIntervalLines(start, stop, False,
+            #                                                             lines=rospy.get_param('arousal_valence'))
         elif condition == 'c3':
-            return speech_text, lm_arousal_valence_CL.getTimeIntervalLines(start, stop, False, lines=rospy.get_param('arousal_valence_cl'))
+            return speech_text, lm_arousal_valence_CL.getLastLines(count=30 * SECONDS_FOR_AV_COMPUTE, dateTime=False)
+            # return speech_text, lm_arousal_valence_CL.getTimeIntervalLines(start, stop, False,
+            #                                                                lines=rospy.get_param('arousal_valence_cl'))
 
 
     return answer
@@ -139,13 +144,14 @@ def setStateInfo(stateName):
 
 def emotionDetection(dimensions, state=""):
     lm.write('Emotion detection function started')
+    print(dimensions)
 
     try:
         # converting dimension values to python lists
         dimensions = list(map(lambda x: x.replace('] [', '],['), dimensions))
         dimensions = list(map(lambda x: x.replace(' ', ''), dimensions))
         dimensions = list(map(lambda x: json.loads(x), dimensions))
-
+        print(dimensions)
         # getting the mean valued list of the dimensions
         dimensionsMean = np.mean(dimensions, axis=0)
         lm.write('\nArousal-Valence average values: ' + str(dimensionsMean) + '\n')
@@ -154,7 +160,7 @@ def emotionDetection(dimensions, state=""):
         if (arousal > -0.1 and arousal < 0.1) and (valence > -0.1 and valence < 0.1):
             lm.write('Neutral is running...')
             lm.write('\nEmotion: <NEUTRAL>')
-            tts_proxy(nlg.dialogue['emotion'][8], 'normal_talk')
+            tts_proxy(nlg.dialogue['emotion'][8])
 
             return
         if arousal > 0 and valence > 0:
@@ -231,7 +237,9 @@ def emotionDetection(dimensions, state=""):
             return
 
     except:
-        lm.write('\nWARNING: Emotion couldn\'t detected! Returning...')
+        lm.write('\nWARNING: Emotion couldn\'t detected! Returning with Neutral...')
+        tts_proxy(nlg.dialogue['emotion'][8])
+        return
 
 
 class PredProcess(smach.State):
@@ -248,10 +256,12 @@ class PredProcess(smach.State):
         self.first_time = True
 
         #choosing the condition randomly
-        conditions = ['c1','c2','c3']
+        conditions = ['c1', 'c2', 'c3']
+        # conditions = ['c2', 'c2', 'c2']
+        conditions = ['c3', 'c3', 'c3']
         random.shuffle(conditions)
 
-        self.task_condition = {'past':conditions[0], 'present':conditions[1], 'future':conditions[2]}
+        self.task_condition = {'past': conditions[0], 'present': conditions[1], 'future': conditions[2]}
 
         self.condition = ''
 
@@ -362,7 +372,6 @@ class PastImpactful(smach.State):
         count = 0
 
         while count < 2:
-
             speech_text = speech_proxy(TIMEOUT)
 
             while speech_text == '<NOT_RESPONDED>':
@@ -387,9 +396,8 @@ class PastImpactful(smach.State):
                 emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
-
-            tts_proxy(nlg.dialogue['past']['impactful'][4])
-
+            #
+            # tts_proxy(nlg.dialogue['past']['impactful'][4])
 
             count += 1
 

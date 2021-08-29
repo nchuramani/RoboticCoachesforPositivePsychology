@@ -1,4 +1,5 @@
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 
 def concordance_correlation_coefficient(y_true, y_pred,
                                         sample_weight=None,
