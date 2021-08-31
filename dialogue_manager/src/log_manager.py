@@ -243,7 +243,7 @@ class LogManager():
 
         self.tableCondition = condition
 
-    def getLastLines(self, count, dateTime=True):
+    def getLastLines(self, count, dateTime=True, lines=None):
         '''
         Returns the specified amount of last lines from the file as a list. Returns 'False' if count is more than the existed lines' amount
 
@@ -254,11 +254,18 @@ class LogManager():
         '''
 
         try:
-            with open(self.file, 'r') as f:
-                lines = f.readlines()[-count:]
+
+            if lines is None:
+                try:
+                    with open(self.file, 'r') as f:
+                        lines = f.readlines()[-count:]
+
+                except:
+                    with open(self.file, 'r') as f:
+                        lines = f.readlines()
 
             lines = list(map(lambda x: x[:-1], lines))
-                
+
             if not dateTime:
                 # excluding datetime from the lines
                 for i in range(len(lines)):

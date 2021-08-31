@@ -3,6 +3,7 @@
 import numpy
 from GDM_Imagine_Dimensional.episodic_gwr import EpisodicGWR
 from GDM_Imagine_Dimensional import gtls
+from FaceChannelUtils import imageProcessingUtil, modelDictionary, modelLoader
 import numpy as np
 np.seterr(divide='ignore', invalid='ignore')
 import re
@@ -188,7 +189,7 @@ def save_generated_output(inp, generated_outp, path, valence, arousal):
         save_image((generated_outp[i] + 1) * 255 / 2, save_path + "/ar_" + str(arousal[i][0]) + "_val_" + str(valence[i][0]) + ".jpg")
 
 
-def load_image_as_network_input(image_path):
+def load_image_as_network_input(image_path, imageSize=(96, 96), normalise=True):
     """
     Load image and normalize it to pixel values in [-1,1].
 
@@ -196,9 +197,12 @@ def load_image_as_network_input(image_path):
 
     @return: numpy array of size 96x96x3
     """
-    image = get_image_array(image_path, image_size=(96, 96))
-    image = normalize_image(image, 2)
-    return image - 1
+    image = get_image_array(image_path, image_size=imageSize)
+    if normalise:
+        image = normalize_image(image, 2)
+        return image - 1
+    else:
+        return image
 
 
 # --------------------------------------------------------------------
@@ -236,7 +240,7 @@ def generate_images(loadPath, valence, arousal, path_to_dir, path_to_out_dir):
         images_tensor = graph.get_tensor_by_name("input_images:0")
 
         # randomly selecting images
-        files = numpy.random.choice(os.listdir(path_to_dir), size=50)
+        files = os.listdir(path_to_dir)[-5:]
 
         # load input
         files_already = os.listdir(path_to_out_dir)
@@ -254,6 +258,101 @@ def generate_images(loadPath, valence, arousal, path_to_dir, path_to_out_dir):
             # save
             save_generated_output(i, x, path_to_out_dir + "/" + file, valence=valence, arousal=arousal)
 
+def preProcess(image, imageSize= (64,64)):
+
+    image = numpy.array(image)
+
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+    image = numpy.array(cv2.resize(image, imageSize))
+
+    image = numpy.expand_dims(image, axis=0)
+
+    image = image.astype('float32')
+
+    image /= 255
+
+    return image
+def generate_encodings_facechannel(loadPath, path_to_out_dir, mode='imagine'):
+    import keras.backend.tensorflow_backend as tb
+    facechannel_faceSize = (64, 64)
+    tb._SYMBOLIC_SCOPE.value = True
+
+    dataX = []
+    dataY_arousal = []
+    dataY_valence = []
+    with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)) as sess:
+        # load input
+        modelDimensional = modelLoader.modelLoader(modelDictionary.DimensionalModel)
+        if mode == 'imagine':
+            files = sort_nicely(os.listdir(path_to_out_dir))
+            for file in files:
+                encodings = []
+                arousal = []
+                valence = []
+                imgs = os.listdir(path_to_out_dir + file)
+                for img in imgs:
+                    name = img.split(".jp")[0]
+                    _, ar, _, val = name.split("_")
+                    arousal.append(float(ar))
+                    valence.append(float(val))
+                    processedFace = preProcess(load_image_as_network_input(path_to_out_dir + file + "/" + img,
+                                                                                           facechannel_faceSize,
+                                                                           normalise=False).reshape((64, 64, 3)),
+                                                               facechannel_faceSize)
+                    # get encodings
+                    encodings.append(numpy.array(modelDimensional.getDense(processedFace)))
+                arousal = np.array(arousal).reshape((49, 1))
+                valence = np.array(valence).reshape((49, 1))
+                encodings = np.array(encodings).reshape((49, 200))
+
+
+                if  dataX == []:
+                    dataX = encodings
+                    dataY_arousal = arousal
+                    dataY_valence = valence
+                else:
+                    dataX = np.vstack([dataX, encodings])
+                    dataY_arousal = np.vstack([dataY_arousal, arousal])
+                    dataY_valence = np.vstack([dataY_valence, valence])
+            return dataX, np.hstack([dataY_arousal, dataY_valence])
+        elif mode == 'encode':
+            files = sort_nicely(os.listdir(path_to_out_dir))
+            if len(files) < 49:
+                to_fill = 49 - len(files)
+                files = numpy.concatenate([files, [files[i] for i in numpy.random.randint(0, len(files), to_fill)]])
+            else:
+                files = files[-49:]
+            face_time_stamps = [facename.split("_frame_")[1].split('.jp')[0] for facename in files]
+            encodings = []
+            for file in files:
+                processedFace = preProcess(
+                    load_image_as_network_input(path_to_out_dir + file,facechannel_faceSize,
+                                                                           normalise=False).reshape((64, 64, 3)),
+                    facechannel_faceSize)
+                # get encodings
+                encodings.append(numpy.array(modelDimensional.getDense(processedFace)))
+            encodings = np.array(encodings).reshape((len(encodings), 200))
+            return encodings, face_time_stamps
+        elif mode == 'input':
+            encodings = []
+            arousal = []
+            valence = []
+            files = sort_nicely(os.listdir(path_to_out_dir))[-49:]
+            for file in files:
+                processedFace = preProcess(
+                    load_image_as_network_input(path_to_out_dir + file, facechannel_faceSize,
+                                                                           normalise=False).reshape((64, 64, 3)),
+                    facechannel_faceSize)
+                # get encodings
+                encodings.append(numpy.array(modelDimensional.getDense(processedFace)))
+                dimensions = numpy.array(modelDimensional.classify(processedFace))
+                arousal.append(dimensions[0])
+                valence.append(dimensions[1])
+            arousal = np.array(arousal).reshape((len(arousal), 1))
+            valence = np.array(valence).reshape((len(valence), 1))
+            encodings = np.array(encodings).reshape((len(encodings), 200))
+            return encodings, np.hstack([arousal, valence])
 
 def generate_encodings(loadPath, path_to_out_dir, test=False):
     dataX = []
@@ -304,7 +403,7 @@ def generate_encodings(loadPath, path_to_out_dir, test=False):
                     dataX = np.vstack([dataX, encodings])
                     dataY_arousal = np.vstack([dataY_arousal, arousal])
                     dataY_valence = np.vstack([dataY_valence, valence])
-            return dataX, np.hstack([dataY_valence, dataY_arousal])
+            return dataX, np.hstack([dataY_arousal, dataY_valence])
         else:
             if len(files) < 49:
                 to_fill = 49 - len(files)
@@ -334,14 +433,18 @@ def apply_network_to_images_of_dir(loadPath, path_to_dir, path_to_out_dir):
 
     # valence
     valence = np.arange(0.75, -0.751, -0.25)
+    # valence = np.random.uniform(-0.9, 0.9, 49).reshape((49, 1))
     valence = np.repeat(valence, 7).reshape((49, 1))
 
     # arousal
     arousal = [np.arange(0.75, -0.751, -0.25)]
     arousal = np.repeat(arousal, 7, axis=0)
     arousal = np.asarray([item for sublist in arousal for item in sublist]).reshape((49, 1))
+    # arousal = np.random.uniform(-0.9, 0.9, 49).reshape((49, 1))
+
     generate_images(loadPath, valence, arousal, path_to_dir + "/", path_to_out_dir + "/")
-    return generate_encodings(loadPath, path_to_out_dir + "/")
+    # return generate_encodings(loadPath, path_to_out_dir + "/")
+    return generate_encodings_facechannel(loadPath, path_to_out_dir + "/", mode='imagine')
 
 
 
@@ -388,7 +491,7 @@ def train_GDM(data, labels, trained_GWRs):
     # Number of context descriptors; Set to zero for frame-based evaluations.
     num_context = 0
 
-    a_threshold = [0.8, 0.7]
+    a_threshold = [0.6, 0.5]
     h_thresholds = [0.2, 0.2]
     beta = 0.7
     e_learning_rates = [0.087, 0.032]
@@ -416,11 +519,11 @@ def train_GDM(data, labels, trained_GWRs):
 
     # Epochs per sample for incremental learning
     epochs = 5
-    epochs_replay = 2
+    epochs_replay = 1
     # Initialising experienced episodes to Zero.
     n_episodes = 0
     # Number of samples per epoch
-    batch_size = 5
+    batch_size = 20
 
     # Replay parameters; With num_context = 0, RNATs size set to 1, that is, only looking at previous BMU.
     # Size of RNATs
@@ -460,26 +563,26 @@ def train_GDM(data, labels, trained_GWRs):
                               epochs, a_threshold[1], beta, s_learning_rates,
                               context=False, hab_threshold=h_thresholds[1], regulated=1)
 
-        # Running Pseudo-Replay  #######################################"""
-        if n_episodes > 0:
-            # Replay pseudo-samples
-            # lm.write("Training Episodic Replay")
-            # Episodic Pseudo-Replay
-            g_episodic.train_egwr(replay_weights, replay_labels,
-                                  epochs_replay, a_threshold[0], beta,
-                                  e_learning_rates, context=False, hab_threshold=h_thresholds[0], regulated=0)
-            # lm.write("Training Semantic Replay")
-            # Semantic Pseudo-Replay
-            g_semantic.train_egwr(replay_weights, replay_labels,
-                                  epochs_replay, a_threshold[1], beta,
-                                      s_learning_rates, context=False, hab_threshold=h_thresholds[1], regulated=1)
-
-
-        # Generating Pseudo-Samples
-        replay_weights, replay_labels = replay_samples(g_episodic, replay_size)
-        replay_weights = numpy.squeeze(replay_weights)
-        replay_labels = numpy.squeeze(replay_labels)
-        n_episodes += 1
+        # # Running Pseudo-Replay  #######################################"""
+        # if n_episodes > 0:
+        #     # Replay pseudo-samples
+        #     # lm.write("Training Episodic Replay")
+        #     # Episodic Pseudo-Replay
+        #     g_episodic.train_egwr(replay_weights, replay_labels,
+        #                           epochs_replay, a_threshold[0], beta,
+        #                           e_learning_rates, context=False, hab_threshold=h_thresholds[0], regulated=0)
+        #     # lm.write("Training Semantic Replay")
+        #     # Semantic Pseudo-Replay
+        #     g_semantic.train_egwr(replay_weights, replay_labels,
+        #                           epochs_replay, a_threshold[1], beta,
+        #                               s_learning_rates, context=False, hab_threshold=h_thresholds[1], regulated=1)
+        #
+        #
+        # # Generating Pseudo-Samples
+        # replay_weights, replay_labels = replay_samples(g_episodic, replay_size)
+        # replay_weights = numpy.squeeze(replay_weights)
+        # replay_labels = numpy.squeeze(replay_labels)
+        # n_episodes += 1
 
     # Evaluation with only Current Data
     e_weights, e_labels = g_episodic.test_av(ds_vectors, ds_labels, test_accuracy=False)
@@ -498,9 +601,12 @@ def annotate_GDM(trained_GWRs, test_data):
     s_arousals, s_valences = g_semantic.annotate(test_data)
 
     return numpy.array([e_arousals, e_valences]).reshape((len(e_arousals)), 2), \
-           numpy.array([s_arousals, s_valences]).reshape((len(e_arousals)), 2)
+           numpy.array([s_arousals, s_valences]).reshape((len(s_arousals)), 2)
 
-
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = numpy.random.permutation(len(a))
+    return a[p], b[p]
 
 def callback(data):
     if saveFrames and str(rospy.get_param('current_state')) != "NONE":
@@ -522,7 +628,7 @@ def callback(data):
         else:
             input_trained_GWRs = (None, None)
 
-        # Training with Imagined Data Every 2nd Interaction
+        # Training with Imagined Data Every Interaction
         if int(rospy.get_param('imagination_running_flag')) % 2 == 0:
             # Imagining Faces
             imagined_data, imagined_labels = apply_network_to_images_of_dir(loadPath=CAAE_LoadPath,
@@ -533,15 +639,25 @@ def callback(data):
                                                                                 os.path.join(lm.getFileDir(),
                                                                                              'faces_imagined'),
                                                                                 str(rospy.get_param('current_state'))))
+            # Encode Input data
+            input_data, input_labels = generate_encodings_facechannel(CAAE_LoadPath,
+                                                                      os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
+                                                                      mode='input')
+            training_data = numpy.vstack([input_data, imagined_data])
+            training_labels = numpy.vstack([input_labels, imagined_labels])
+            training_data, training_labels = unison_shuffled_copies(training_data, training_labels)
 
-            lm.write("Running GDM Training for " + str(rospy.get_param('current_state')), printText=False)
-            output_trained_GWRs = train_GDM(data=imagined_data, labels=imagined_labels,
+            lm.write("Running GDM Training for " + str(rospy.get_param('current_state')), printText=True)
+            output_trained_GWRs = train_GDM(data=training_data, labels=training_labels,
                                                   trained_GWRs=input_trained_GWRs)
-            # Annotate User Data
+        # Annotate User Data
 
-        encodings, face_time_stamps = generate_encodings(CAAE_LoadPath,
+        # encodings, face_time_stamps = generate_encodings(CAAE_LoadPath,
+        #                                os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
+        #                                test=True)
+        encodings, face_time_stamps = generate_encodings_facechannel(CAAE_LoadPath,
                                        os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
-                                       test=True)
+                                       mode="encode")
         if output_trained_GWRs is None:
             output_trained_GWRs = []
             output_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))

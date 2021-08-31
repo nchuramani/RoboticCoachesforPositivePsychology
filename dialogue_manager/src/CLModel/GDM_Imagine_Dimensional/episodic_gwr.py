@@ -367,10 +367,12 @@ class EpisodicGWR(GammaGWR):
             self.bmus_weight[i] = self.weights[b_index][0]
             for j in range(1, self.depth):
                 input_context[j] = input_context[j - 1]
-
-            valences.append(self.alabelsValence[b_index])
-            arousals.append(self.alabelsArousal[b_index])
-
+            try:
+                valences.append(np.round(self.alabelsValence[b_index]), 3)
+                arousals.append(np.round(self.alabelsArousal[b_index]), 3)
+            except:
+                valences.append(self.alabelsValence[b_index])
+                arousals.append(self.alabelsArousal[b_index])
         valences = [min(1, max(-1, valences[i])) for i in range(len(valences))]
         arousals = [min(1, max(-1, arousals[i])) for i in range(len(arousals))]
         return arousals, valences

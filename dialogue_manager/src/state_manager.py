@@ -10,6 +10,7 @@ import sys
 from datetime import datetime
 
 import json
+import ast
 import numpy as np
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -60,7 +61,7 @@ lm.write('state_manager.py node initialized.')
 # arguments for the knowledge base
 rospy.wait_for_service('speech_recognizer_srv')
 rospy.wait_for_service('text_to_speech_srv')
-SECONDS_FOR_AV_COMPUTE = 8
+SECONDS_FOR_AV_COMPUTE = 5
 
 try:
     # creating service proxy to use the text to speech service
@@ -117,11 +118,13 @@ def speech_proxy(timeout='', dimensions=False, experimenterAnswer=False, conditi
         lm.write('\nArousal Valence frames start time:' + str(start))
         lm.write('Arousal Valence frames stop time:' + str(stop) + '\n')
         if condition == 'c2':
-            return speech_text, lm_arousal_valence.getLastLines(count=30 * SECONDS_FOR_AV_COMPUTE, dateTime=False)
+            return speech_text, lm_arousal_valence.getLastLines(count=30 * SECONDS_FOR_AV_COMPUTE, dateTime=False,
+                                                                lines=rospy.get_param('arousal_valence'))
             # return speech_text, lm_arousal_valence.getTimeIntervalLines(start, stop, False,
             #                                                             lines=rospy.get_param('arousal_valence'))
         elif condition == 'c3':
-            return speech_text, lm_arousal_valence_CL.getLastLines(count=30 * SECONDS_FOR_AV_COMPUTE, dateTime=False)
+            return speech_text, lm_arousal_valence_CL.getLastLines(count=30 * SECONDS_FOR_AV_COMPUTE, dateTime=False,
+                                                                   lines=rospy.get_param('arousal_valence_cl'))
             # return speech_text, lm_arousal_valence_CL.getTimeIntervalLines(start, stop, False,
             #                                                                lines=rospy.get_param('arousal_valence_cl'))
 
@@ -147,15 +150,30 @@ def emotionDetection(dimensions, state=""):
 
     try:
         # converting dimension values to python lists
-        dimensions = list(map(lambda x: x.replace('] [', '],['), dimensions))
-        dimensions = list(map(lambda x: x.replace(' ', ''), dimensions))
-        dimensions = list(map(lambda x: json.loads(x), dimensions))
-        # getting the mean valued list of the dimensions
-        dimensionsMean = np.mean(dimensions, axis=0)
-        lm.write('\nArousal-Valence average values: ' + str(dimensionsMean) + '\n')
+        try:
+            dimensions = list(map(lambda x: x.replace('] [', '],['), dimensions))
+            dimensions = list(map(lambda x: x.replace(' ', ''), dimensions))
+            dimensions = list(map(lambda x: json.loads(x), dimensions))
+            # getting the mean valued list of the dimensions
+            dimensionsMean = np.mean(dimensions, axis=0)
+            lm.write('\nArousal-Valence average values: ' + str(dimensionsMean) + '\n')
+            arousal, valence = dimensionsMean[0][0][0], dimensionsMean[1][0][0]
 
-        arousal, valence = dimensionsMean[0][0][0], dimensionsMean[1][0][0]
-        if (arousal > -0.1 and arousal < 0.1) and (valence > -0.1 and valence < 0.1):
+        except:
+            dimensions = list(map(lambda x: x.replace(' ', ','), dimensions))
+            dimensions = list(map(lambda x: x.replace(',]', ']'), dimensions))
+            dimensions = list(map(lambda x: x.replace('[,', '['), dimensions))
+            dimensions = list(map(lambda x: x.replace('[', ''), dimensions))
+            dimensions = list(map(lambda x: x.replace(']', ''), dimensions))
+            dimensions = list(map(lambda x: np.asarray(ast.literal_eval(x)), dimensions))
+            dimensions = np.array(dimensions).reshape((len(dimensions), 2))
+
+            # getting the mean valued list of the dimensions
+            dimensionsMean = np.mean(dimensions, axis=0)
+            lm.write('\nArousal-Valence average values: ' + str(dimensionsMean) + '\n')
+            arousal, valence = dimensionsMean[0], dimensionsMean[1]
+
+        if (arousal > -0.01 and arousal < 0.01) and (valence > -0.01 and valence < 0.01):
             lm.write('Neutral is running...')
             lm.write('\nEmotion: <NEUTRAL>')
             tts_proxy(nlg.dialogue['emotion'][8])
@@ -234,8 +252,10 @@ def emotionDetection(dimensions, state=""):
 
             return
 
-    except:
+
+    except Exception as e:
         lm.write('\nWARNING: Emotion couldn\'t detected! Returning with Neutral...')
+        lm.write('\nException: ' + str(e))
         tts_proxy(nlg.dialogue['emotion'][8])
         return
 
@@ -454,7 +474,7 @@ class PastGrateful(smach.State):
 
             time.sleep(DELAY)
 
-            tts_proxy(nlg.dialogue['past']['grateful'][6])
+            # tts_proxy(nlg.dialogue['past']['grateful'][6])
 
 
             count += 1
@@ -513,7 +533,7 @@ class PastAccomplishments(smach.State):
                 # sentence += random.choice(nlg.dialogue['phrases'][0])
                 tts_proxy(sentence)
 
-                emotionDetection(userdata.dimensions, state="past")
+                # emotionDetection(userdata.dimensions, state="past")
 
             count += 1
 
@@ -567,8 +587,8 @@ class PresentImpactful(smach.State):
 
             tts_proxy(nlg.dialogue['present']['impactful'][4])
 
-            if userdata.condition == 'c2' or userdata.condition == 'c3':
-                emotionDetection(userdata.dimensions, state="present")
+            # if userdata.condition == 'c2' or userdata.condition == 'c3':
+            #     emotionDetection(userdata.dimensions, state="present")
 
             count += 1
 
@@ -630,7 +650,7 @@ class PresentGrateful(smach.State):
                 sentence = random.choice(nlg.dialogue['phrases'][2])
                 tts_proxy(sentence)
 
-                emotionDetection(userdata.dimensions, state="present")
+                # emotionDetection(userdata.dimensions, state="present")
 
             count += 1
 
@@ -686,7 +706,7 @@ class PresentAccomplishments(smach.State):
             if userdata.condition == 'c2' or userdata.condition == 'c3':
                 sentence = random.choice(nlg.dialogue['phrases'][0])
                 tts_proxy(sentence)
-                emotionDetection(userdata.dimensions, state="present")
+                # emotionDetection(userdata.dimensions, state="present")
 
             count += 1
 
@@ -742,8 +762,8 @@ class FutureImpactful(smach.State):
             time.sleep(DELAY)
 
             tts_proxy(nlg.dialogue['future']['impactful'][5])
-            if userdata.condition == 'c2' or userdata.condition == 'c3':
-                emotionDetection(userdata.dimensions, state="future")
+            # if userdata.condition == 'c2' or userdata.condition == 'c3':
+            #     emotionDetection(userdata.dimensions, state="future")
 
             count += 1
 
@@ -806,7 +826,7 @@ class FutureGrateful(smach.State):
             if userdata.condition == 'c2' or userdata.condition == 'c3':
                 sentence = random.choice(nlg.dialogue['phrases'][3])
                 tts_proxy(sentence)
-                emotionDetection(userdata.dimensions, state="future")
+                # emotionDetection(userdata.dimensions, state="future")
 
             count += 1
 
@@ -866,7 +886,7 @@ class FutureAccomplishments(smach.State):
                 # sentence += nlg.dialogue['phrases'][1]
                 tts_proxy(sentence)
 
-                emotionDetection(userdata.dimensions, state="future")
+                # emotionDetection(userdata.dimensions, state="future")
 
             count += 1
 
@@ -1042,6 +1062,12 @@ def main():
 
         lm.write('State machine is executed')
         outcome = sm.execute()
+        if outcome == 'terminate':
+            lm.write('Ending Experiment.')
+            lm_flow.printTable()
+            lm.close()
+            lm_flow.close()
+            exit(0)
 
         rospy.spin()
 
