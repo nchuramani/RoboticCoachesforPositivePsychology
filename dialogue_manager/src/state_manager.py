@@ -173,7 +173,7 @@ def emotionDetection(dimensions, state=""):
             lm.write('\nArousal-Valence average values: ' + str(dimensionsMean) + '\n')
             arousal, valence = dimensionsMean[0], dimensionsMean[1]
 
-        if (arousal > -0.01 and arousal < 0.01) and (valence > -0.01 and valence < 0.01):
+        if (valence > -0.1 and valence < 0.1):
             lm.write('Neutral is running...')
             lm.write('\nEmotion: <NEUTRAL>')
             tts_proxy(nlg.dialogue['emotion'][8])
@@ -203,13 +203,19 @@ def emotionDetection(dimensions, state=""):
             lm.write('QUADRANT 2 is running...')
 
             if state == 'past' or state == 'present':
-                sentences = nlg.dialogue['emotion'][0] #sad
-                sentences.extend(nlg.dialogue['emotion'][4]) #angry
-                sentences.append(nlg.dialogue['emotion'][6]) #disgust
+                lm.write('\nEmotion: <NEGATIVE(SAD, ANGRY, DISGUST)>')
+
+                tts_proxy(random.choice(nlg.dialogue['emotion'][4]), 'negative')
+                # sentences = []
+                # sentences.append(nlg.dialogue['emotion'][0]) #sad
+                # sentences.append(random.choice(nlg.dialogue['emotion'][4])) #angry
+                # sentences.append(random.choice(nlg.dialogue['emotion'][6])) #disgust
             else:
-                sentences = nlg.dialogue['emotion'][1]  # sad
-                sentences.extend(nlg.dialogue['emotion'][5])  # angry
-                sentences.append(nlg.dialogue['emotion'][7])  # disgust1
+                tts_proxy(random.choice(nlg.dialogue['emotion'][5]), 'negative')
+                # sentences = []
+                # sentences.append(nlg.dialogue['emotion'][1]) #sad
+                # sentences.append(random.choice(nlg.dialogue['emotion'][5])) #angry
+                # sentences.append(random.choice(nlg.dialogue['emotion'][7])) #disgust
 
             # if arousal > 0.5 and valence < -0.3:
             #     lm.write('\nEmotion: <FEAR>')
@@ -217,9 +223,9 @@ def emotionDetection(dimensions, state=""):
             #     tts_proxy(random.choice(nlg.dialogue['emotion'][3]), 'negative')
             #
             # else:
-            lm.write('\nEmotion: <NEGATIVE(SAD, ANGRY, DISGUST)>')
-
-            tts_proxy(random.choice(sentences), 'negative')
+            # lm.write('\nEmotion: <NEGATIVE(SAD, ANGRY, DISGUST)>')
+            #
+            # tts_proxy(random.choice(sentences), 'negative')
 
             return
 
@@ -274,8 +280,9 @@ class PredProcess(smach.State):
         self.first_time = True
 
         #choosing the condition randomly
-        conditions = ['c1', 'c2', 'c3']
-        random.shuffle(conditions)
+        # conditions = ['c1', 'c2', 'c3']
+        conditions = ['c1', 'c3', 'c2']
+        # random.shuffle(conditions)
 
         self.task_condition = {'past': conditions[0], 'present': conditions[1], 'future': conditions[2]}
 
@@ -412,8 +419,8 @@ class PastImpactful(smach.State):
                 emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
-            #
-            # tts_proxy(nlg.dialogue['past']['impactful'][4])
+
+            tts_proxy(nlg.dialogue['past']['impactful'][4])
 
             count += 1
 
@@ -469,12 +476,11 @@ class PastGrateful(smach.State):
             if userdata.condition == 'c2' or userdata.condition == 'c3':
                 sentence = random.choice(nlg.dialogue['phrases'][2])
                 tts_proxy(sentence)
-
                 emotionDetection(userdata.dimensions, state="past")
 
             time.sleep(DELAY)
 
-            # tts_proxy(nlg.dialogue['past']['grateful'][6])
+            tts_proxy(nlg.dialogue['past']['grateful'][6])
 
 
             count += 1

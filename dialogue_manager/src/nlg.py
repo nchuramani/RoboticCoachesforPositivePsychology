@@ -3,7 +3,7 @@
 # a dictionary that keeps and the whole script under categories
 
 dialogue = {"general":  [" I couldn't understand what you said. Can you please repeat it?",
-                        " Please answer with the requested response."],
+                        " I couldn't understand what you said.  Please answer with the requested response."],
 
             "yes/no":   [["yes", "yeah", "yep", "yeap", "okay", "fine", "true", "ok", "aye", "definitely", "certainly", "exactly", "affirmative", "gladly", "good", "nice", "of course", "positive", "precisely", "sure"],
                          ["no", "nope", "not", "nay", "never", "nae", "naw", "nah"]],
@@ -48,7 +48,7 @@ dialogue = {"general":  [" I couldn't understand what you said. Can you please r
                         " That sounds really frustrating.",
                         " That sounds difficult. I'm sorry."],
                         #Neutral [8]
-                        " Thank you for sharing this with me."],
+                        " Hmm. I see."],
                         #surprise
                         #[" Wow, that sounds surprising.",
                         #" Wow, that must have come out of the blue."]],
@@ -89,7 +89,7 @@ dialogue = {"general":  [" I couldn't understand what you said. Can you please r
                             " My name is Pepper.",
                             " Nice to meet you!",
                             " We're going to do positive psychology practices today. I'll explain what that means in a minute. Are you okay with that? Please say 'yes' or 'no'.",
-                            " Okay. Positive psychology practices aim to guide the participant to focus on the positive things in their life. Often, the negative things in our life get much of our attention, while the positive things are harder to focus on.",
+                            " Okay. Positive psychology practices aim to guide you to focus on the positive things in life. Often, the negative things in our life get much of our attention, while the positive things are harder to focus on.",
                             " Today, we will first focus on your past, then talk about your present, and then look at the future. With this, we aim to help you think optimistically about your future.",
                             " We will do three exercises each focussing on these time periods. With this, we aim to help you reflect on all three time periods in your life, and cast our attention towards the future.",
                             " We have about 40 minutes together.",

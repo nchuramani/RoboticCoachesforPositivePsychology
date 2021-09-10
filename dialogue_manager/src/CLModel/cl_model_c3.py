@@ -240,7 +240,7 @@ def generate_images(loadPath, valence, arousal, path_to_dir, path_to_out_dir):
         images_tensor = graph.get_tensor_by_name("input_images:0")
 
         # randomly selecting images
-        files = os.listdir(path_to_dir)[-5:]
+        files = os.listdir(path_to_dir)[-10:]
 
         # load input
         files_already = os.listdir(path_to_out_dir)
@@ -283,7 +283,7 @@ def generate_encodings_facechannel(loadPath, path_to_out_dir, mode='imagine'):
     dataY_valence = []
     with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)) as sess:
         # load input
-        modelDimensional = modelLoader.modelLoader(modelDictionary.DimensionalModel)
+        modelDimensional = modelLoader.modelLoader(modelDictionary.DimensionalModel, printSummary=False)
         if mode == 'imagine':
             files = sort_nicely(os.listdir(path_to_out_dir))
             for file in files:
@@ -318,11 +318,11 @@ def generate_encodings_facechannel(loadPath, path_to_out_dir, mode='imagine'):
             return dataX, np.hstack([dataY_arousal, dataY_valence])
         elif mode == 'encode':
             files = sort_nicely(os.listdir(path_to_out_dir))
-            if len(files) < 49:
-                to_fill = 49 - len(files)
+            if len(files) < 90:
+                to_fill = 90 - len(files)
                 files = numpy.concatenate([files, [files[i] for i in numpy.random.randint(0, len(files), to_fill)]])
             else:
-                files = files[-49:]
+                files = files[-90:]
             face_time_stamps = [facename.split("_frame_")[1].split('.jp')[0] for facename in files]
             encodings = []
             for file in files:
@@ -338,7 +338,7 @@ def generate_encodings_facechannel(loadPath, path_to_out_dir, mode='imagine'):
             encodings = []
             arousal = []
             valence = []
-            files = sort_nicely(os.listdir(path_to_out_dir))[-49:]
+            files = sort_nicely(os.listdir(path_to_out_dir))[-90:]
             for file in files:
                 processedFace = preProcess(
                     load_image_as_network_input(path_to_out_dir + file, facechannel_faceSize,
@@ -609,7 +609,8 @@ def unison_shuffled_copies(a, b):
     return a[p], b[p]
 
 def callback(data):
-    if saveFrames and str(rospy.get_param('current_state')) != "NONE":
+    invalid_states = ["NONE", "SURVEY"]
+    if saveFrames and str(rospy.get_param('current_state')) not in invalid_states:
         output_trained_GWRs = None
         imaginedFaceDir = os.path.join(lm.getFileDir(), 'faces_imagined/')
 
@@ -629,27 +630,27 @@ def callback(data):
             input_trained_GWRs = (None, None)
 
         # Training with Imagined Data Every Interaction
-        if int(rospy.get_param('imagination_running_flag')) % 2 == 0:
-            # Imagining Faces
-            imagined_data, imagined_labels = apply_network_to_images_of_dir(loadPath=CAAE_LoadPath,
-                                                                            path_to_dir=os.path.join(
-                                                                                os.path.join(lm.getFileDir(), 'faces'),
-                                                                                str(rospy.get_param('current_state'))),
-                                                                            path_to_out_dir=os.path.join(
-                                                                                os.path.join(lm.getFileDir(),
-                                                                                             'faces_imagined'),
-                                                                                str(rospy.get_param('current_state'))))
-            # Encode Input data
-            input_data, input_labels = generate_encodings_facechannel(CAAE_LoadPath,
-                                                                      os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
-                                                                      mode='input')
-            training_data = numpy.vstack([input_data, imagined_data])
-            training_labels = numpy.vstack([input_labels, imagined_labels])
-            training_data, training_labels = unison_shuffled_copies(training_data, training_labels)
 
-            lm.write("Running GDM Training for " + str(rospy.get_param('current_state')), printText=True)
-            output_trained_GWRs = train_GDM(data=training_data, labels=training_labels,
-                                                  trained_GWRs=input_trained_GWRs)
+        # Imagining Faces
+        imagined_data, imagined_labels = apply_network_to_images_of_dir(loadPath=CAAE_LoadPath,
+                                                                        path_to_dir=os.path.join(
+                                                                            os.path.join(lm.getFileDir(), 'faces'),
+                                                                            str(rospy.get_param('current_state'))),
+                                                                        path_to_out_dir=os.path.join(
+                                                                            os.path.join(lm.getFileDir(),
+                                                                                         'faces_imagined'),
+                                                                            str(rospy.get_param('current_state'))))
+        # Encode Input data
+        input_data, input_labels = generate_encodings_facechannel(CAAE_LoadPath,
+                                                                  os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
+                                                                  mode='input')
+        training_data = numpy.vstack([imagined_data, input_data])
+        training_labels = numpy.vstack([imagined_labels, input_labels])
+        # training_data, training_labels = unison_shuffled_copies(training_data, training_labels)
+
+        lm.write("Running GDM Training for " + str(rospy.get_param('current_state')), printText=True)
+        output_trained_GWRs = train_GDM(data=training_data, labels=training_labels,
+                                              trained_GWRs=input_trained_GWRs)
         # Annotate User Data
 
         # encodings, face_time_stamps = generate_encodings(CAAE_LoadPath,
@@ -658,18 +659,19 @@ def callback(data):
         encodings, face_time_stamps = generate_encodings_facechannel(CAAE_LoadPath,
                                        os.path.join(os.path.join(lm.getFileDir(), 'faces'), str(rospy.get_param('current_state'))) + "/",
                                        mode="encode")
-        if output_trained_GWRs is None:
-            output_trained_GWRs = []
-            output_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))
-            output_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_S", NetworkClass=EpisodicGWR))
-        episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
-        for r in range(len(face_time_stamps)):
-            text = face_time_stamps[r].replace('::', '_') + " - " + str(numpy.array(episodic_results[r]).reshape((2, 1, 1))).replace('\n', '')
-            lm_arousal_valence_cl.write(text, dateTime=False, printText=False)
-            if rospy.get_param('arousal_valence_cl') != 'NONE':
-                rospy.set_param('arousal_valence_cl', rospy.get_param('arousal_valence_cl') + [text])
-            else:
-                rospy.set_param('arousal_valence_cl', [text])
+        # if output_trained_GWRs is None:
+        #     output_trained_GWRs = []
+        #     output_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_E", NetworkClass=EpisodicGWR))
+        #     output_trained_GWRs.append(gtls.import_network(file_name=gwrs_path + "/GDM_S", NetworkClass=EpisodicGWR))
+        if str(rospy.get_param('current_state')) not in invalid_states:
+            episodic_results, semantic_results = annotate_GDM(output_trained_GWRs, encodings)
+            for r in range(len(face_time_stamps)):
+                text = face_time_stamps[r].replace('::', '_') + " - " + str(numpy.array(episodic_results[r]).reshape((2, 1, 1))).replace('\n', '')
+                lm_arousal_valence_cl.write(text, dateTime=False, printText=False)
+                if rospy.get_param('arousal_valence_cl') != 'NONE':
+                    rospy.set_param('arousal_valence_cl', rospy.get_param('arousal_valence_cl') + [text])
+                else:
+                    rospy.set_param('arousal_valence_cl', [text])
         if not os.path.exists(gwrs_path):
             os.makedirs(gwrs_path)
         gtls.export_network(gwrs_path + "/GDM_E", output_trained_GWRs[0])

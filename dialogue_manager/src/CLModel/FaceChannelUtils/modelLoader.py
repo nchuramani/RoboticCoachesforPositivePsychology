@@ -34,18 +34,19 @@ class modelLoader:
         return self._dataLoader
 
 
-    def __init__(self, modelDictionary):
+    def __init__(self, modelDictionary, printSummary=True):
 
         self._modelDictionary = modelDictionary
         self._dataLoader = imageProcessingUtil.imageProcessingUtil()
 
-        self.loadModel()
+        self.loadModel(printSummary=printSummary)
 
 
-    def loadModel(self):
+    def loadModel(self, printSummary=True):
 
         self._model = load_model(self.modelDictionary.modelDirectory, custom_objects={'fbeta_score': metrics.fbeta_score, 'rmse': metrics.rmse, 'recall': metrics.recall, 'precision': metrics.precision, 'ccc': metrics.ccc})
-        self._model.summary()
+        if printSummary:
+            self._model.summary()
 
 
     def classify(self, image):

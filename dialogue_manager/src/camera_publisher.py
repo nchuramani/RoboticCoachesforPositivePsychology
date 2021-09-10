@@ -20,7 +20,8 @@ lm = LogManager('main')
 bridge = CvBridge()
 
 # subscribes to computer camera
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(2)
+# cap = cv2.VideoCapture(0)
 lm.write('Subscribed to camera')
 
 def main():
