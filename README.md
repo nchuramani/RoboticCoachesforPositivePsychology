@@ -79,6 +79,8 @@ Essentials:
 
 * Install all the libraries in the requirements.txt file.
 
+* Install CUDA 9 ([Instructions](https://github.com/akirademoss/cuda-9.0-installation-on-ubuntu-18.04))
+
 * Install **ROS (Robot Operating System)**
   
   >*ROS Melodic* with *Ubuntu 18.04* preferably
