@@ -175,10 +175,15 @@ After each session, three logs files are created:
 
 ## Contact
 
-[![Hatice](https://img.shields.io/badge/dr_hatice_gunes-hg410@cam.ac.uk-green?style=for-the-badge&logo=mail)](mailto:hg410@cam.ac.uk)
+[![Hatice](https://img.shields.io/badge/prof_hatice_gunes-hg410@cam.ac.uk-green?style=for-the-badge&logo=mail)](mailto:hg410@cam.ac.uk)
+[![Hatice Linkedin](https://img.shields.io/badge/linkedin-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/hatice-gunes-05ab628)
 
 [![Nikhil](https://img.shields.io/badge/nikhil_churamani-nc528@cam.ac.uk-yellow?style=for-the-badge&logo=mail)](mailto:nc528@cam.ac.uk)
+[![Nikhil Linkedin](https://img.shields.io/badge/linkedin-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/nikhilchuramani)
 
 [![Minja](https://img.shields.io/badge/minja_axelsson-mwa29@cam.ac.uk-red?style=for-the-badge&logo=mail)](mailto:mwa29@cam.ac.uk)
+[![Minja Linkedin](https://img.shields.io/badge/linkedin-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/minjaaxelsson/)
 
-[![Atahan](https://img.shields.io/badge/atahan_caldir-athncldr@ozu.edu.tr-blue?style=for-the-badge&logo=mail)](mailto:atahan.caldir@ozu.edu.tr)
+[![Atahan Mail](https://img.shields.io/badge/atahan_caldir-athncldr@ozu.edu.tr-blue?style=for-the-badge&logo=mail)](mailto:atahan.caldir@ozu.edu.tr)
+[![Atahan Linkedin](https://img.shields.io/badge/linkedin-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/atahancaldir/)
+
