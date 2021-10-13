@@ -103,6 +103,8 @@ To display view Smach states live:
 
 ## Instructions
 
+🎥 To watch the video about the technical details of the project, [click](https://drive.google.com/file/d/1NOUQQdYElSrAGtRTWOEKKw_PDEQ6Fkng/view?usp=sharing).
+
 After installing ROS, a workspace and then a package should be installed. For advanced guide, see:
 
 :warning: ROS package name should be *'dialogue_manager'*. Otherwise, change the name from the project files.
