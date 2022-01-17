@@ -1,7 +1,7 @@
 <br />
 <p align="center">
   <a href="https://www.cl.cam.ac.uk/~hg410/people.html">
-    <img src="dialogue_manager/img/Cambridge.png" alt="Cambridge Logo" width="420" height="140">
+    <img src="dialogue_manager/img/Cambridge.png" alt="Cambridge Logo" width="630" height="210">
   </a>
 </p>
 
@@ -103,7 +103,12 @@ To display view Smach states live:
 
 ## Instructions
 
-🎥 To watch the video about the technical details of the project, [click](https://drive.google.com/file/d/1NOUQQdYElSrAGtRTWOEKKw_PDEQ6Fkng/view?usp=sharing).
+<br />
+  <a href="https://drive.google.com/file/d/1NOUQQdYElSrAGtRTWOEKKw_PDEQ6Fkng/view?usp=sharing">
+    <img src="dialogue_manager/img/VideoBanner.png" alt="Video Banner" width="640" height="360">
+  </a>
+
+ >🎥 To watch the video about the technical details of the project, [click](https://drive.google.com/file/d/1NOUQQdYElSrAGtRTWOEKKw_PDEQ6Fkng/view?usp=sharing) the image above.
 
 After installing ROS, a workspace and then a package should be installed. For advanced guide, see:
 
