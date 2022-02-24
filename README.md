@@ -191,6 +191,6 @@ After each session, three logs files are created:
 [![Minja](https://img.shields.io/badge/minja_axelsson-mwa29@cam.ac.uk-red?style=for-the-badge&logo=mail)](mailto:mwa29@cam.ac.uk)
 [![Minja Linkedin](https://img.shields.io/badge/linkedin-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/minjaaxelsson/)
 
-[![Atahan Mail](https://img.shields.io/badge/atahan_caldir-athncldr@ozu.edu.tr-blue?style=for-the-badge&logo=mail)](mailto:atahan.caldir@ozu.edu.tr)
+[![Atahan Mail](https://img.shields.io/badge/atahan_caldir-atahan.caldir@ozu.edu.tr-blue?style=for-the-badge&logo=mail)](mailto:atahan.caldir@ozu.edu.tr)
 [![Atahan Linkedin](https://img.shields.io/badge/linkedin-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/atahancaldir/)
 
