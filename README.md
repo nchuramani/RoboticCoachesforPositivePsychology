@@ -1,15 +1,6 @@
-<br />
-<p align="center">
-  <a href="https://www.cl.cam.ac.uk/~hg410/people.html">
-    <img src="dialogue_manager/img/Cambridge.png" alt="Cambridge Logo" width="630" height="210">
-  </a>
-</p>
+# Continual Learning for Affective Robotics: A Proof of Concept for Wellbeing
 
-<p>&nbsp;</p>
-
-# Mental Well-being Robot Coach with Pepper Robot
-
-This repository holds the source code for the Mental Well-being Robot Coach project that is created in the Affective Intelligence and Robotics Lab (AFAR Lab) in the University of Cambridge. The main idea is to test the effects of Continual Learning in social robots' interaction.
+This repository holds the source code for the paper Continual Learning for Affective Robotics: A Proof of Concept for Wellbeing published at the AR4W: Affective Robotics for Well-being Workshop at the 10th International Conference on Affective Computing and Intelligent Interaction, 2022.
 
 <br />
 <p align="center">
