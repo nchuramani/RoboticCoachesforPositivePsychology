@@ -48,12 +48,6 @@ url: https://doi.ieeecomputersociety.org/10.1109/FG47880.2020.00070
 
 <br>
 
-## Script
-
-The script that contains dialogue scenario and is implemented to the demo state machine can be found in *SCRIPT.pdf* file. During the development of the script, various psychologists helped the process.
-
-<br>
-
 ## Smach
 
 Project utilizes a Python library named **Smach**. This allows us to develop a state machine structure to implement the script easily. Below is the structure of the demo state machine:
