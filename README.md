@@ -181,7 +181,10 @@ After each session, three logs files are created:
 
 ## Contact
 
-[![Nikhil](https://img.shields.io/badge/nikhil_churamani-nc528@cam.ac.uk-yellow?style=for-the-badge&logo=mail)](mailto:nc528@cam.ac.uk)
-[![Minja](https://img.shields.io/badge/minja_axelsson-mwa29@cam.ac.uk-red?style=for-the-badge&logo=mail)](mailto:mwa29@cam.ac.uk)
+[![Nikhil](https://img.shields.io/badge/nikhil_churamani-nc528@cam.ac.uk-yellow?style=for-the-badge&logo=mail)](mailto:nikhil.churamani@cl.cam.ac.uk)
+
+[![Minja](https://img.shields.io/badge/minja_axelsson-mwa29@cam.ac.uk-red?style=for-the-badge&logo=mail)](mailto:minja.axelsson@cl.cam.ac.uk)
+
 [![Atahan](https://img.shields.io/badge/atahan_caldir-atahan.caldir@ozu.edu.tr-blue?style=for-the-badge&logo=mail)](mailto:atahan.caldir@ozu.edu.tr)
-[![Hatice](https://img.shields.io/badge/prof_hatice_gunes-hg410@cam.ac.uk-green?style=for-the-badge&logo=mail)](mailto:hg410@cam.ac.uk)
+
+[![Hatice](https://img.shields.io/badge/prof_hatice_gunes-hg410@cam.ac.uk-green?style=for-the-badge&logo=mail)](mailto:hatice.gunes@cl.cam.ac.uk)
