@@ -77,7 +77,7 @@ A custom state machine can be created and used for different purposes.
 
 Essentials:
 
-* Install all the libraries in the requirements.txt file.
+* Install all the libraries in the *requirements.txt* file.
 
 * Install CUDA 9 ([Instructions](https://github.com/akirademoss/cuda-9.0-installation-on-ubuntu-18.04))
 
@@ -88,6 +88,10 @@ Essentials:
 * Install **NAOqi** Python SDK ([Download link](https://developer.softbankrobotics.com/pepper-naoqi-25-downloads-linux))
 
   >*NAOqi 2.5.7* preferably
+  
+* Install *checkpoint.zip* file ([Download link](https://drive.google.com/file/d/1I7vI4omJtjVA2205UMaRSk5J1FajlK_o/view?usp=sharing))
+
+  >It is necessary for using the CL model
 
 To use Choregraph simulation:
 
@@ -118,7 +122,15 @@ After installing ROS, a workspace and then a package should be installed. For ad
 
 * [Creating a ROS package](http://wiki.ros.org/ROS/Tutorials/CreatingPackage)
 
-After creating the package, put the project files inside the *dialogue_manager* folder into the ROS package's folder, and inside the *catkin_ws* folder, run:
+After creating the package, put the project files inside the *dialogue_manager* folder into the ROS package's folder.
+
+Extract *checkpoint.zip* file and put the folder named "checkpoint" inside the "CLModel" folder in the ROS package. The path should be 
+
+```sh
+dialogue manager > src > CLModel > checkpoint
+```
+
+Then, go to the *catkin_ws* folder and run:
 
 ```sh
 $ catkin_make
@@ -127,6 +139,8 @@ $ catkin_make
 <br>
 
 Demo state machine is created to test three different conditions, where the first condition implements only the script for interaction, the second condition uses FaceChannel for emotion detection and third one use the Continual Learning model for personalization.
+
+After running the program, it will create a folder named "SessionReports" **automatically** which will be holding the log files and image outputs.
 
 The condition is selected randomly in the *state_manager.py*
 
