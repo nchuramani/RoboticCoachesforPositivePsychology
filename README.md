@@ -180,9 +180,9 @@ After each session, three logs files are created:
 <br>
 
 ## Acknowledgement
-For the purpose of \textit{open access}, the authors have applied a Creative Commons Attribution (CC BY) license to any Accepted Manuscript version arising. 
+For the purpose of open access, the authors have applied a Creative Commons Attribution (CC BY) license to any Accepted Manuscript version arising. 
 
-**Funding:** N.~Churamani is funded by the EPSRC under grant EP/R$513180$/$1$ (ref.~$2107412$). M.~Axelsson is funded by the Osk. Huttunen foundation and the EPSRC under grant EP/T$517847$/$1$. H.Gunes' work is supported by the EPSRC under grant ref. EP/R$030782$/$1$. A.Çaldır contributed to this work while undertaking a summer research study at the Department of Computer Science and Technology, University of Cambridge.
+**Funding:** N.Churamani is funded by the EPSRC under grant EP/R1513180/1 (ref.2107412). M.Axelsson is funded by the Osk. Huttunen foundation and the EPSRC under grant EP/T517847/1. H.Gunes' work is supported by the EPSRC under grant ref. EP/R030782/1. A.Çaldır contributed to this work while undertaking a summer research study at the Department of Computer Science and Technology, University of Cambridge.
 
 **Data Access Statement:** Overall statistical analysis of research data underpinning this publication is contained in the manuscript. Additional raw data related to this publication cannot be openly released as the raw data contains videos and transcripts of the participants' interaction with the robot, which were impossible to anonymise.
 ```
