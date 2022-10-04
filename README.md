@@ -179,6 +179,22 @@ After each session, three logs files are created:
 
 <br>
 
+## Acknowledgement
+For the purpose of \textit{open access}, the authors have applied a Creative Commons Attribution (CC BY) license to any Accepted Manuscript version arising. 
+
+**Funding:** N.~Churamani is funded by the EPSRC under grant EP/R$513180$/$1$ (ref.~$2107412$). M.~Axelsson is funded by the Osk. Huttunen foundation and the EPSRC under grant EP/T$517847$/$1$. H.Gunes' work is supported by the EPSRC under grant ref. EP/R$030782$/$1$. A.Çaldır contributed to this work while undertaking a summer research study at the Department of Computer Science and Technology, University of Cambridge.
+
+**Data Access Statement:** Overall statistical analysis of research data underpinning this publication is contained in the manuscript. Additional raw data related to this publication cannot be openly released as the raw data contains videos and transcripts of the participants' interaction with the robot, which were impossible to anonymise.
+```
+@INPROCEEDINGS{churamani2022CL4HRI,  
+  author = {Churamani, Nikhil and Axelsson, Minja and Caldir, Atahan and Gunes, Hatice},
+  booktitle   = {Proceedings of the 10th International Conference on Affective Computing and Intelligent Interaction Workshops and Demos (ACIIW)},   
+  title = {{Continual Learning for Affective Robotics: A Proof of Concept for Wellbeing}},
+  year      = {2022},  
+  publisher   = {IEEE},
+}
+```
+
 ## Contact
 
 [![Nikhil](https://img.shields.io/badge/nikhil_churamani-nikhil.churamani@cl.cam.ac.uk-yellow?style=for-the-badge&logo=mail)](mailto:nikhil.churamani@cl.cam.ac.uk)
