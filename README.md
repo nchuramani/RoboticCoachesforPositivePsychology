@@ -78,9 +78,9 @@ Essentials:
 
   >It is necessary for using the CL model
 
-To use Choregraph simulation:
+To use Choregraph simulation and load the behaviors to Pepper Robot:
 
-* Install **Choregraphe**
+* Install **Choregraphe** (Choregraphe is a must for both the physical and the virtual Pepper Robot)
 
 To display view Smach states live:
 
@@ -121,9 +121,17 @@ Then, go to the *catkin_ws* folder and run:
 $ catkin_make
 ```
 
+Upload the Pepper robot behaviors to physical or virtual robot via Choregraphe software. Behavior files are located in 
+
+```sh
+dialogue_manager > src > Behaviors
+```
+
+Custom behaviors can be created and implemented to the system using the Choregraphe software.
+
 <br>
 
-Demo state machine is created to test three different conditions, where the first condition implements only the script for interaction, the second condition uses FaceChannel for emotion detection and third one use the Continual Learning model for personalization.
+Demo state machine is created to test three different conditions, where the first condition implements only the script for interaction, the second condition uses FaceChannel for emotion detection and third one uses the Continual Learning model for personalization.
 
 After running the program, it will create a folder named "SessionReports" **automatically** which will be holding the log files and image outputs.
 
